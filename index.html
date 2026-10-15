@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Customer list cleanup demo | Casim Bahadar</title>
+<meta name="description" content="Upload a customer CSV and see it cleaned in your browser: spacing, capitalization, Canadian phone numbers, postal codes, dates, missing fields and possible duplicates, with every change logged.">
+<meta name="theme-color" content="#F7F5FB">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-coRv6BtDZd8KY+pEo9x0fU36pA4sgFzfGbIwxAabfsY='; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect x=%275%27 y=%271%27 width=%2710%27 height=%2710%27 rx=%272%27 fill=%27%23A993E4%27/%3E%3Crect x=%271%27 y=%275%27 width=%2710%27 height=%2710%27 rx=%272%27 fill=%27%235A3DB8%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..900&display=swap">
+<style>
+/* Tokens. Spacing sits on a 4px scale, radii on three sizes. */
+:root {
+  --paper: #F7F5FB; --mist: #EDE8F7; --lav: #D8CCF3; --violet: #5A3DB8; --violet-deep: #432C93;
+  --ink: #221B35; --slate: #5F5873; --line: #DDD5EE; --error: #A32A3C; --error-bg: #FBEAEE; --changed-bg: #FFF6DB;
+  --s1: 0.25rem; --s2: 0.5rem; --s3: 0.75rem; --s4: 1rem; --s6: 1.5rem; --s8: 2rem; --s12: 3rem; --s16: 4rem;
+  --r-sm: 4px; --r-md: 12px; --r-pill: 999px;
+  --gutter: var(--s4);
+  --font: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: light;
+}
+@media (min-width: 40rem) { :root { --gutter: var(--s8); } }
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font);
+  font-size: 1rem; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+@media (min-width: 40rem) { body { font-size: 1.0625rem; } }
+h1, h2, h3, h4 { margin: 0 0 var(--s3); line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
+h1 { font-size: clamp(2rem, 1.4rem + 3vw, 3.2rem); font-weight: 850; letter-spacing: -0.035em; margin-bottom: var(--s4); }
+h2 { font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem); font-weight: 800; margin: 0; }
+h3 { font-size: 1.2rem; font-weight: 750; margin-top: var(--s12); }
+h4 { font-size: 1.05rem; font-weight: 750; margin-bottom: var(--s1); }
+p { margin: 0 0 var(--s4); max-width: 64ch; }
+a { color: var(--violet); text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; }
+@media (hover: hover) { a:hover { color: var(--violet-deep); } }
+:focus-visible { outline: 3px solid var(--violet); outline-offset: 3px; border-radius: var(--r-sm); }
+.wrap { max-width: 62rem; margin-inline: auto; padding-inline: var(--gutter); }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.topbar { border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); flex-wrap: wrap; padding-block: var(--s4); }
+.wordmark { display: inline-flex; align-items: center; gap: var(--s3); min-height: 2.75rem; color: var(--ink); font-weight: 800; letter-spacing: -0.02em; text-decoration: none; }
+.mark { width: 1rem; height: 1rem; border-radius: var(--r-sm); background: var(--violet); box-shadow: 4px -4px 0 -1px #A993E4; margin-top: var(--s1); }
+.demo-flag { font-size: 0.9375rem; font-weight: 650; color: var(--slate); }
+
+.intro { padding-block: var(--s8) var(--s6); }
+.lede { font-size: 1.125rem; }
+.privacy { max-width: 44rem; margin: 0; padding: var(--s4); background: var(--mist); border-radius: var(--r-md); }
+.privacy p { margin: 0; }
+.privacy strong { font-weight: 750; }
+
+.step { padding-block: var(--s8); border-top: 1px solid var(--line); }
+.step-head { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s4); }
+.step-num { flex: none; display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: var(--r-pill); background: var(--ink); color: var(--paper); font-weight: 800; font-size: 1rem; }
+.muted { color: var(--slate); }
+.small { font-size: 0.9375rem; }
+
+/* One button system. Groups decide width: full width stacked on phones, equal widths in a row. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; text-align: center;
+  min-height: 3rem; padding: var(--s3) var(--s6);
+  border: 2px solid transparent; border-radius: var(--r-pill);
+  font: inherit; font-size: 1rem; font-weight: 650; line-height: 1.2; text-decoration: none; cursor: pointer;
+}
+.btn-primary { background: var(--violet); color: #fff; }
+.btn-quiet { border-color: var(--ink); color: var(--ink); background: transparent; }
+@media (hover: hover) {
+  .btn-primary:hover { background: var(--violet-deep); color: #fff; }
+  .btn-quiet:hover { background: var(--ink); color: var(--paper); }
+}
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.actions { display: flex; flex-direction: column; gap: var(--s3); margin-block: var(--s4); }
+.actions > .btn { width: 100%; }
+@media (min-width: 40rem) {
+  .actions { flex-direction: row; flex-wrap: wrap; }
+  .actions > .btn { flex: 1 1 0; width: auto; max-width: 16rem; }
+}
+
+details { margin-top: var(--s4); }
+summary { cursor: pointer; font-weight: 650; color: var(--violet); min-height: 2.75rem; display: flex; align-items: center; }
+textarea { width: 100%; min-height: 10rem; font: 1rem/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace; padding: var(--s3); border: 1.5px solid var(--slate); border-radius: var(--r-md); background: #fff; color: var(--ink); }
+label.block { display: block; font-weight: 650; margin-bottom: var(--s2); }
+select { font: inherit; font-size: 1rem; min-height: 2.75rem; padding: var(--s1) var(--s2); border: 1.5px solid var(--slate); border-radius: var(--r-md); background: #fff; color: var(--ink); max-width: 100%; }
+input[type="checkbox"], input[type="radio"] { width: 1.25rem; height: 1.25rem; accent-color: var(--violet); margin: 0; flex: none; }
+
+.status { font-weight: 650; margin: var(--s3) 0 0; }
+.alert { margin-top: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--error-bg); color: var(--error); font-weight: 650; border: 1.5px solid var(--error); }
+.info { margin-top: var(--s4); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--mist); }
+.alert:empty, .info:empty { display: none; }
+.stale { margin: 0 0 var(--s6); padding: var(--s3) var(--s4); border-radius: var(--r-md); background: var(--changed-bg); border: 1.5px solid #8A6A12; font-weight: 650; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; }
+table { border-collapse: collapse; width: 100%; font-size: 0.9375rem; }
+th, td { text-align: left; padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--mist); font-weight: 700; white-space: nowrap; }
+tr:last-child td, tr:last-child th { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.check { display: flex; align-items: center; gap: var(--s2); min-height: 2.75rem; cursor: pointer; }
+.map-table td { vertical-align: middle; }
+.ws { display: inline-block; min-width: 0.6em; color: var(--violet); font-weight: 700; }
+.empty-val { color: var(--slate); font-style: italic; }
+
+fieldset { border: 0; padding: 0; margin: var(--s6) 0 0; }
+legend { font-weight: 700; margin-bottom: var(--s2); padding: 0; }
+.radio { display: flex; align-items: center; gap: var(--s3); min-height: 2.75rem; }
+
+.summary-line { font-size: 1.125rem; font-weight: 600; max-width: 60ch; }
+.summary-line b { font-weight: 850; }
+.jump { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); margin: 0; padding: 0; list-style: none; }
+.jump a { display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; }
+
+.cellmap { margin: 0; }
+.cellmap svg { display: block; max-width: 100%; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s6); margin: var(--s3) 0 0; padding: 0; list-style: none; font-size: 0.9375rem; }
+.legend li { display: flex; align-items: center; gap: var(--s2); }
+.sw { width: 1rem; height: 1rem; border-radius: var(--r-sm); display: inline-block; }
+.sw-same { background: var(--line); }
+.sw-changed { background: var(--violet); }
+.sw-flag { background: var(--error); background-image: repeating-linear-gradient(45deg, transparent 0 2px, rgba(255,255,255,.55) 2px 4px); }
+figcaption { font-size: 0.9375rem; color: var(--slate); margin-top: var(--s2); }
+
+.charts { display: grid; gap: 0 var(--s12); }
+.charts > div { min-width: 0; }
+@media (min-width: 52rem) { .charts { grid-template-columns: 1fr 1fr; } }
+.bars { display: grid; gap: var(--s3); max-width: 40rem; }
+.bar-row { display: grid; grid-template-columns: 1fr 2.5rem; align-items: center; gap: var(--s1) var(--s3); font-size: 0.9375rem; }
+.bar-row .bar-track { grid-column: 1 / -1; grid-row: 2; }
+.bar-track { display: block; height: 1rem; background: var(--mist); border-radius: var(--r-pill); overflow: hidden; }
+.bar-fill { display: block; height: 100%; background: var(--violet); border-radius: var(--r-pill); }
+.bars.problems .bar-fill { background: var(--error); }
+.bar-row .n { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+
+.pairs { display: grid; gap: var(--s4); }
+.pair { min-width: 0; border: 1.5px solid var(--line); border-radius: var(--r-md); padding: var(--s4); background: #fff; }
+.pair.is-merged { border-color: var(--violet); background: var(--mist); }
+.pair.is-kept { background: var(--paper); }
+.pair .reason { margin: 0 0 var(--s3); color: var(--slate); font-size: 0.9375rem; }
+.pair table { table-layout: fixed; font-size: 0.875rem; }
+.pair th, .pair td { white-space: normal; overflow-wrap: anywhere; padding: var(--s2) var(--s3); }
+.pair thead th:first-child { width: 30%; }
+.pair th { overflow-wrap: normal; }
+.pair td.diff { background: var(--changed-bg); font-weight: 650; }
+.pair .outcome { font-weight: 650; margin: var(--s3) 0 0; }
+.kind { display: inline-block; font-size: 0.875rem; font-weight: 700; padding: 0 var(--s2); border-radius: var(--r-pill); background: var(--lav); margin-left: var(--s2); vertical-align: 0.1em; }
+
+.req-text { font-size: 0.9375rem; }
+@media (min-width: 40.01rem) { .req-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+@media (max-width: 40rem) {
+  .stack thead, .map-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .stack tr { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2) var(--s4); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+  .stack tr:last-child { border-bottom: 0; }
+  .stack td { display: block; padding: 0; border: 0; overflow-wrap: anywhere; }
+  .stack td::before { content: attr(data-label); display: block; font-size: 0.875rem; font-weight: 650; color: var(--slate); }
+  .stack td:nth-child(n+5) { grid-column: 1 / -1; }
+  .stack td:nth-child(1), .stack td:nth-child(2) { font-weight: 750; }
+  .stack td:nth-child(1)::before { content: "Row "; display: inline; font: inherit; color: inherit; }
+  .stack td:nth-child(2)::before { display: none; }
+  .stack td.num { white-space: normal; }
+  .stack-wrap.scroll, .map-wrap.scroll { overflow-x: visible; }
+  .map-table tr { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: var(--s1) var(--s4); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+  .map-table tr:last-child { border-bottom: 0; }
+  .map-table th { grid-column: 1 / -1; background: none; padding: 0; border: 0; white-space: normal; }
+  .map-table td { padding: 0; border: 0; }
+  .map-table td:last-child { grid-column: 1 / -1; font-size: 0.875rem; color: var(--slate); overflow-wrap: anywhere; }
+  .map-table td:last-child::before { content: "First value: "; }
+  .map-table select { width: 100%; }
+}
+
+.biz { margin-block: var(--s8); }
+.biz-box { max-width: 44rem; padding: var(--s6); background: var(--mist); border-radius: var(--r-md); }
+.biz-box h2 { font-size: 1.35rem; margin-bottom: var(--s2); }
+.biz-box p:last-child { margin-bottom: 0; }
+footer { border-top: 1px solid var(--line); padding-block: var(--s6) var(--s12); font-size: 0.9375rem; color: var(--slate); }
+footer p { margin: 0 0 var(--s2); }
+
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="wordmark" href="https://casimbahadar.github.io/"><span class="mark" aria-hidden="true"></span>Casim Bahadar</a>
+    <span class="demo-flag">Demo with made-up data</span>
+  </div>
+</header>
+
+<main id="main">
+  <div class="wrap intro">
+    <h1>Clean up a customer list</h1>
+    <p class="lede">Load a customer spreadsheet saved as CSV. The tool fixes spacing and capitalization, puts phone numbers, postal codes and dates into one format, flags missing information, and lists possible duplicates for you to check. Every change is logged cell by cell.</p>
+    <div class="privacy"><p><strong>Your file stays on this device.</strong> This page reads and cleans it in your browser, and its security settings block it from sending your data anywhere.</p></div>
+  </div>
+
+  <section class="wrap step" aria-labelledby="h-load">
+    <div class="step-head"><span class="step-num" aria-hidden="true">1</span><h2 id="h-load">Load a customer list</h2></div>
+    <div class="actions">
+      <button class="btn btn-primary" id="btn-sample" type="button">Load sample data</button>
+      <button class="btn btn-quiet" id="btn-file" type="button">Choose a CSV file</button>
+      <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
+    </div>
+    <p class="small muted">The sample is 60 fictional customers. Phone numbers use the 555-01xx range, which is set aside for fiction, and emails use example domains.</p>
+    <details id="paste-box">
+      <summary>Paste CSV text instead</summary>
+      <label class="block" for="paste">CSV text, with a header row first</label>
+      <textarea id="paste" spellcheck="false" autocomplete="off"></textarea>
+      <div class="actions"><button class="btn btn-quiet btn-small" id="btn-paste" type="button">Use pasted text</button></div>
+    </details>
+    <p class="status" id="load-status" role="status"></p>
+    <div class="info" id="load-info"></div>
+    <div class="alert" id="load-error" role="alert"></div>
+  </section>
+
+  <section class="wrap step" id="step-map" aria-labelledby="h-map" hidden>
+    <div class="step-head"><span class="step-num" aria-hidden="true">2</span><h2 id="h-map" tabindex="-1">Check the columns</h2></div>
+    <p>Each column was matched to a type from its header. Change any that are wrong. A required column is flagged wherever a cell is empty.</p>
+    <div class="scroll map-wrap">
+      <table class="map-table">
+        <thead><tr><th scope="col">Column in your file</th><th scope="col">Treat as</th><th scope="col">Required</th><th scope="col">First value</th></tr></thead>
+        <tbody id="map-body"></tbody>
+      </table>
+    </div>
+    <fieldset>
+      <legend>In this file, what does a date like 03/04/2025 mean?</legend>
+      <label class="radio"><input type="radio" name="datemode" value="unsure" checked> Not sure. Flag those dates for me to check.</label>
+      <label class="radio"><input type="radio" name="datemode" value="day"> Day first (3 April 2025)</label>
+      <label class="radio"><input type="radio" name="datemode" value="month"> Month first (March 4, 2025)</label>
+    </fieldset>
+    <div class="actions"><button class="btn btn-primary" id="btn-clean" type="button">Clean the data</button></div>
+  </section>
+
+  <section class="wrap step" id="step-results" aria-labelledby="h-results" hidden>
+    <div class="step-head"><span class="step-num" aria-hidden="true">3</span><h2 id="h-results" tabindex="-1">Results</h2></div>
+    <p class="stale" id="stale" role="status" hidden></p>
+    <p class="summary-line" id="summary"></p>
+    <nav aria-label="Results sections"><ul class="jump">
+      <li><a href="#h-dupes">Duplicates</a></li>
+      <li><a href="#h-issues">Problems</a></li>
+      <li><a href="#h-log">Change log</a></li>
+      <li><a href="#h-download">Download</a></li>
+    </ul></nav>
+
+    <h3>Where the changes are</h3>
+    <figure class="cellmap" id="cellmap"></figure>
+
+    <div class="charts">
+      <div><h3>Changes by type</h3><div class="bars" id="bars-changes"></div></div>
+      <div><h3>Problems found</h3><div class="bars problems" id="bars-problems"></div></div>
+    </div>
+
+    <h3 id="h-dupes">Possible duplicates</h3>
+    <p class="small">Nothing is merged unless you choose to. Merging keeps the first row, fills its empty cells from the second, and leaves the second row out of the clean file. The change log records every merge.</p>
+    <div class="pairs" id="pairs"></div>
+
+    <h3 id="h-issues">Cells that need attention</h3>
+    <p class="small muted">These were left as they were for a person to fix.</p>
+    <div id="issues"></div>
+
+    <h3 id="h-log">Change log</h3>
+    <p class="small muted">A <span class="ws" aria-hidden="true">␣</span> marks a space in the original value.</p>
+    <div id="changes"></div>
+
+    <h3 id="h-download">Download</h3>
+    <p class="small muted">Downloads include any merges you've made above.</p>
+    <div class="actions">
+      <button class="btn btn-primary" id="dl-clean" type="button">Download clean CSV</button>
+      <button class="btn btn-quiet" id="dl-log" type="button">Download change log</button>
+      <button class="btn btn-quiet" id="dl-issues" type="button">Download issues list</button>
+    </div>
+    <div class="actions"><button class="btn btn-quiet btn-small" id="btn-reset" type="button">Start over</button></div>
+  </section>
+
+  <aside class="wrap biz" aria-labelledby="h-biz">
+    <div class="biz-box">
+      <h2 id="h-biz">What this would look like for your business</h2>
+      <p>A version built for you would start from the export your system already produces, such as a point-of-sale, booking or accounting system, and apply your rules: which fields are required, how names and addresses should look, and what counts as a duplicate. It can run with one click or on a schedule, and it keeps the same change log so anyone can check what changed and why.</p>
+      <p><a href="https://casimbahadar.github.io/contact.html">Tell me about your data</a></p>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Built by Casim Bahadar, solutions developer in Kitchener-Waterloo, Ontario.</p>
+    <p><a href="https://casimbahadar.github.io/work.html">See more work</a> or <a href="https://casimbahadar.github.io/contact.html">get in touch</a>.</p>
+  </div>
+</footer>
+
+<script>
+/* CORE-START: pure functions, no page access. Tests call these through window.Cleanup. */
+const Cleanup = (() => {
+  const TYPES = [
+    ["name", "Name"], ["email", "Email"], ["phone", "Phone"], ["address", "Street address"],
+    ["city", "City"], ["province", "Province"], ["postal", "Postal code"], ["date", "Date"],
+    ["text", "Other text"], ["ignore", "Leave as is"]
+  ];
+  const PROBLEMS = {
+    missing: "Missing required value",
+    phone_invalid: "Not a valid 10-digit phone number",
+    postal_invalid: "Not a valid Canadian postal code",
+    date_ambiguous: "Could be day/month or month/day",
+    date_impossible: "This date doesn't exist",
+    date_unrecognized: "Date format not recognized",
+    row_short: "Row has fewer values than the header",
+    row_long: "Row has more values than the header"
+  };
+
+  function detectDelimiter(text) {
+    let line = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '"') q = !q;
+      else if (!q && (c === "\n" || c === "\r")) break;
+      line += q ? "" : c;
+    }
+    const counts = { ",": 0, ";": 0, "\t": 0 };
+    for (const c of line) if (c in counts) counts[c]++;
+    let best = ",";
+    for (const d of [";", "\t"]) if (counts[d] > counts[best]) best = d;
+    return best;
+  }
+
+  // RFC 4180 parser. Returns records with the file row number each started on.
+  function parseCSV(text) {
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    const delim = detectDelimiter(text);
+    const records = [];
+    let field = "", fields = [], inQuotes = false, recStart = 1, line = 1, quoteLine = 0;
+    const endRecord = () => {
+      fields.push(field); field = "";
+      records.push({ line: recStart, fields });
+      fields = [];
+    };
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else {
+          if (c === "\n") line++;
+          field += c;
+        }
+        continue;
+      }
+      if (c === '"' && field === "") { inQuotes = true; quoteLine = line; }
+      else if (c === delim) { fields.push(field); field = ""; }
+      else if (c === "\r") { if (text[i + 1] === "\n") i++; endRecord(); line++; recStart = line; }
+      else if (c === "\n") { endRecord(); line++; recStart = line; }
+      else field += c;
+    }
+    if (inQuotes) {
+      const err = new Error("Line " + quoteLine + " opens a quote that never closes, so the rest of the file can't be read. Check that line for a stray \" character.");
+      err.code = "unclosed";
+      throw err;
+    }
+    if (field !== "" || fields.length) endRecord();
+    // number records like a spreadsheet does, and drop fully blank ones
+    const out = [];
+    records.forEach((r, i) => {
+      if (r.fields.every(f => f.trim() === "")) return;
+      out.push({ row: i + 1, fields: r.fields });
+    });
+    return { delimiter: delim, records: out };
+  }
+
+  function detectType(header) {
+    const h = header.toLowerCase();
+    if (/e-?mail/.test(h)) return "email";
+    if (/phone|tel\b|telephone|mobile|cell/.test(h)) return "phone";
+    if (/postal|post ?code|zip/.test(h)) return "postal";
+    if (/date|since|joined|created|sign ?-?up|birth|dob/.test(h)) return "date";
+    if (/company|business|organi[sz]ation/.test(h)) return "text";
+    if (/name/.test(h)) return "name";
+    if (/address|street/.test(h)) return "address";
+    if (/city|town|municipality/.test(h)) return "city";
+    if (/prov|state|region/.test(h)) return "province";
+    return "text";
+  }
+
+  function buildTable(parsed) {
+    if (!parsed.records.length) {
+      const e = new Error("The file is empty. Load a CSV with a header row and at least one customer."); e.code = "empty"; throw e;
+    }
+    const head = parsed.records[0];
+    const body = parsed.records.slice(1);
+    if (!body.length) {
+      const e = new Error("The file has a header row but no customer rows."); e.code = "header_only"; throw e;
+    }
+    const width = Math.max(head.fields.length, ...body.map(r => r.fields.length));
+    const seen = {};
+    const headers = [];
+    for (let i = 0; i < width; i++) {
+      let h = (head.fields[i] || "").trim().replace(/\s+/g, " ");
+      if (!h) h = "Unnamed column " + (i + 1);
+      if (seen[h]) h = h + " (" + (i + 1) + ")";
+      seen[h] = true;
+      headers.push(h);
+    }
+    const shape = [];
+    const rows = body.map(r => {
+      const n = r.fields.length;
+      if (n < head.fields.length) shape.push({ row: r.row, code: "row_short", value: n + " of " + head.fields.length + " values" });
+      if (n > head.fields.length) shape.push({ row: r.row, code: "row_long", value: n + " values, header has " + head.fields.length });
+      const cells = r.fields.slice();
+      while (cells.length < width) cells.push("");
+      return { row: r.row, cells };
+    });
+    return { headers, rows, shape, delimiter: parsed.delimiter };
+  }
+
+  const collapse = s => s.replace(/[\s\u00A0]+/g, " ").trim();
+  const hasLetters = s => /\p{L}/u.test(s);
+
+  function recase(s) {
+    const lower = s.toLocaleLowerCase("en-CA");
+    let out = lower.replace(/(^|[\s\-'\u2019.(])(\p{L})/gu, (m, p, ch) => p + ch.toLocaleUpperCase("en-CA"));
+    out = out.replace(/\bMc(\p{Ll})/gu, (m, ch) => "Mc" + ch.toLocaleUpperCase("en-CA"));
+    return out;
+  }
+
+  function cleanText(raw, type) {
+    let v = collapse(raw);
+    const spaced = v !== raw;
+    let cased = false;
+    if (type === "email") {
+      const low = v.toLowerCase();
+      if (low !== v) { v = low; cased = true; }
+    } else if ((type === "name" || type === "city") && hasLetters(v) && (v === v.toLocaleUpperCase("en-CA") || v === v.toLocaleLowerCase("en-CA"))) {
+      const rc = recase(v);
+      if (rc !== v) { v = rc; cased = true; }
+    }
+    const rule = spaced && cased ? "Spacing and capitalization" : spaced ? "Spacing" : cased ? "Capitalization" : "";
+    return { value: v, rule };
+  }
+
+  function cleanPhone(raw) {
+    const v = collapse(raw);
+    if (!v) return { value: v, rule: v !== raw ? "Spacing" : "" };
+    let main = v, ext = "";
+    const m = v.match(/^(.*?)[\s,]*(?:ext\.?|extension|x|#)\s*(\d{1,6})$/i);
+    if (m) { main = m[1]; ext = m[2]; }
+    if (/[a-z]/i.test(main)) return { value: v, problem: "phone_invalid", rule: v !== raw ? "Spacing" : "" };
+    let d = main.replace(/\D/g, "");
+    if (d.length === 11 && d[0] === "1") d = d.slice(1);
+    if (d.length !== 10 || !/^[2-9]\d{2}[2-9]\d{6}$/.test(d)) return { value: v, problem: "phone_invalid", rule: v !== raw ? "Spacing" : "" };
+    const out = d.slice(0, 3) + "-" + d.slice(3, 6) + "-" + d.slice(6) + (ext ? " ext. " + ext : "");
+    return { value: out, rule: out !== raw ? "Phone format" : "", digits: d };
+  }
+
+  const POSTAL = /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z]\d[ABCEGHJ-NPRSTV-Z]\d$/;
+  function cleanPostal(raw) {
+    const v = collapse(raw);
+    if (!v) return { value: v, rule: v !== raw ? "Spacing" : "" };
+    const k = v.toUpperCase().replace(/[\s-]/g, "");
+    if (!POSTAL.test(k)) return { value: v, problem: "postal_invalid", rule: v !== raw ? "Spacing" : "" };
+    const out = k.slice(0, 3) + " " + k.slice(3);
+    return { value: out, rule: out !== raw ? "Postal code format" : "", key: out };
+  }
+
+  const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+  function monthNum(word) {
+    const w = word.toLowerCase().replace(/\.$/, "");
+    if (MONTHS[w]) return MONTHS[w];
+    const k = w.slice(0, 3);
+    const full = ["january","february","march","april","may","june","july","august","september","october","november","december"];
+    const i = full.indexOf(w);
+    return i >= 0 ? i + 1 : (w.length >= 3 && MONTHS[k] && full[MONTHS[k] - 1].startsWith(w) ? MONTHS[k] : 0);
+  }
+  const pad = n => String(n).padStart(2, "0");
+  function realDate(y, m, d) {
+    if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1) return false;
+    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return d <= dim;
+  }
+  function cleanDate(raw, mode) {
+    const v = collapse(raw);
+    if (!v) return { value: v, rule: v !== raw ? "Spacing" : "" };
+    let y, m, d, how = "Date format", r;
+    if ((r = v.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})$/))) { y = +r[1]; m = +r[2]; d = +r[3]; }
+    else if ((r = v.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})$/))) {
+      const a = +r[1], b = +r[2]; y = +r[3];
+      if (a > 12 && b <= 12) { d = a; m = b; }
+      else if (b > 12 && a <= 12) { m = a; d = b; }
+      else if (a === b) { m = a; d = b; }
+      else if (a > 12 && b > 12) return { value: v, problem: "date_impossible", rule: "" };
+      else if (mode === "day") { d = a; m = b; how = "Date format (day first setting)"; }
+      else if (mode === "month") { m = a; d = b; how = "Date format (month first setting)"; }
+      else return { value: v, problem: "date_ambiguous", rule: v !== raw ? "Spacing" : "" };
+    }
+    else if ((r = v.match(/^([A-Za-z]+\.?)\s+(\d{1,2}),?\s+(\d{4})$/))) { m = monthNum(r[1]); d = +r[2]; y = +r[3]; if (!m) return { value: v, problem: "date_unrecognized", rule: "" }; }
+    else if ((r = v.match(/^(\d{1,2})[\s-]+([A-Za-z]+\.?),?[\s-]+(\d{4})$/))) { d = +r[1]; m = monthNum(r[2]); y = +r[3]; if (!m) return { value: v, problem: "date_unrecognized", rule: "" }; }
+    else return { value: v, problem: "date_unrecognized", rule: v !== raw ? "Spacing" : "" };
+    if (!realDate(y, m, d)) return { value: v, problem: "date_impossible", rule: v !== raw ? "Spacing" : "" };
+    const out = y + "-" + pad(m) + "-" + pad(d);
+    return { value: out, rule: out !== raw ? how : "" };
+  }
+
+  function jaro(a, b) {
+    if (a === b) return 1;
+    const la = a.length, lb = b.length;
+    if (!la || !lb) return 0;
+    const win = Math.max(0, Math.floor(Math.max(la, lb) / 2) - 1);
+    const ma = new Array(la).fill(false), mb = new Array(lb).fill(false);
+    let m = 0;
+    for (let i = 0; i < la; i++) {
+      for (let j = Math.max(0, i - win); j < Math.min(lb, i + win + 1); j++) {
+        if (!mb[j] && a[i] === b[j]) { ma[i] = mb[j] = true; m++; break; }
+      }
+    }
+    if (!m) return 0;
+    let t = 0, k = 0;
+    for (let i = 0; i < la; i++) if (ma[i]) { while (!mb[k]) k++; if (a[i] !== b[k]) t++; k++; }
+    return (m / la + m / lb + (m - t / 2) / m) / 3;
+  }
+  function jw(a, b) {
+    const j = jaro(a, b);
+    let p = 0;
+    while (p < 4 && p < a.length && p < b.length && a[p] === b[p]) p++;
+    return j + p * 0.1 * (1 - j);
+  }
+  const nameKey = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z\s'-]/g, " ").replace(/\s+/g, " ").trim();
+  function similarName(a, b) {
+    const x = nameKey(a), y = nameKey(b);
+    if (!x || !y) return false;
+    if (x === y) return true;
+    const tx = x.split(" "), ty = y.split(" ");
+    if (tx.length < 2 || ty.length < 2) return jw(x, y) >= 0.92;
+    const lastOk = jw(tx[tx.length - 1], ty[ty.length - 1]) >= 0.9;
+    const f1 = tx[0], f2 = ty[0];
+    const firstOk = jw(f1, f2) >= 0.85 || (f1.length === 1 && f2[0] === f1) || (f2.length === 1 && f1[0] === f2);
+    return lastOk && firstOk;
+  }
+
+  function findDuplicates(rows, headers, types, keys) {
+    const pairs = new Map();
+    const add = (i, j, type, reason) => {
+      const a = Math.min(i, j), b = Math.max(i, j);
+      const k = a + "-" + b;
+      if (!pairs.has(k)) pairs.set(k, { a, b, type, reasons: [] });
+      const p = pairs.get(k);
+      if (type === "exact") { p.type = "exact"; p.reasons = ["Every cell matches after cleanup"]; return; }
+      if (p.type === "exact") return;
+      if (!p.reasons.includes(reason)) p.reasons.push(reason);
+    };
+    const used = types.map((t, i) => t !== "ignore" ? i : -1).filter(i => i >= 0);
+    const exact = new Map();
+    rows.forEach((r, i) => {
+      const k = used.map(c => r.cells[c].toLowerCase()).join("\u0001");
+      if (!used.some(c => r.cells[c] !== "")) return;
+      if (!exact.has(k)) exact.set(k, []);
+      exact.get(k).push(i);
+    });
+    for (const g of exact.values()) for (let x = 1; x < g.length; x++) add(g[0], g[x], "exact");
+
+    const nameCols = types.map((t, i) => t === "name" ? i : -1).filter(i => i >= 0);
+    const fullName = r => nameCols.map(c => r.cells[c]).join(" ").trim();
+    const blocks = (keyOf, reason, needName) => {
+      const map = new Map();
+      rows.forEach((r, i) => {
+        const k = keyOf(i);
+        if (!k) return;
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(i);
+      });
+      for (const g of map.values()) {
+        if (g.length < 2 || g.length > 300) continue;
+        for (let x = 0; x < g.length; x++) for (let y = x + 1; y < g.length; y++) {
+          const i = g[x], j = g[y];
+          if (needName && !similarName(fullName(rows[i]), fullName(rows[j]))) continue;
+          add(i, j, "near", reason);
+        }
+      }
+    };
+    const emailCols = types.map((t, i) => t === "email" ? i : -1).filter(i => i >= 0);
+    if (emailCols.length) blocks(i => { const v = rows[i].cells[emailCols[0]]; return /@/.test(v) ? v.toLowerCase() : ""; }, "Same email address", false);
+    if (nameCols.length) {
+      blocks(i => keys[i].phone || "", "Same phone number and a similar name", true);
+      blocks(i => keys[i].postal || "", "Same postal code and a similar name", true);
+    }
+    return [...pairs.values()].sort((p, q) => p.a - q.a || p.b - q.b);
+  }
+
+  // mapping: [{type, required}] per column; mode: "unsure" | "day" | "month"
+  function clean(table, mapping, mode) {
+    const types = mapping.map(m => m.type);
+    const changes = [], issues = [];
+    const keys = [];
+    const rows = table.rows.map(r => {
+      const k = {};
+      const cells = r.cells.map((raw, c) => {
+        const t = types[c];
+        if (t === "ignore") return raw;
+        let res;
+        if (t === "phone") res = cleanPhone(raw);
+        else if (t === "postal") res = cleanPostal(raw);
+        else if (t === "date") res = cleanDate(raw, mode);
+        else res = cleanText(raw, t);
+        if (res.rule) changes.push({ row: r.row, col: table.headers[c], before: raw, after: res.value, rule: res.rule });
+        if (res.problem) issues.push({ row: r.row, col: table.headers[c], value: raw, code: res.problem, problem: PROBLEMS[res.problem] });
+        if (res.digits && !k.phone) k.phone = res.digits;
+        if (res.key && !k.postal) k.postal = res.key;
+        if (mapping[c].required && res.value === "") issues.push({ row: r.row, col: table.headers[c], value: "", code: "missing", problem: PROBLEMS.missing });
+        return res.value;
+      });
+      keys.push(k);
+      return { row: r.row, cells };
+    });
+    for (const s of table.shape) issues.push({ row: s.row, col: "(whole row)", value: s.value, code: s.code, problem: PROBLEMS[s.code] });
+    issues.sort((x, y) => x.row - y.row);
+    const pairs = findDuplicates(rows, table.headers, types, keys).map(p => ({ type: p.type, a: rows[p.a].row, b: rows[p.b].row, ia: p.a, ib: p.b, reasons: p.reasons }));
+    return { headers: table.headers, rows, changes, issues, pairs };
+  }
+
+  // Apply the visitor's merge decisions. decisions: { "a-b": "merge" | "keep" }
+  function applyMerges(result, decisions) {
+    const byRow = new Map(result.rows.map(r => [r.row, { row: r.row, cells: r.cells.slice() }]));
+    const removed = new Map();
+    const log = [];
+    for (const p of result.pairs) {
+      if (decisions[p.a + "-" + p.b] !== "merge") continue;
+      if (removed.has(p.a) || removed.has(p.b)) continue;
+      const keep = byRow.get(p.a), drop = byRow.get(p.b);
+      result.headers.forEach((h, c) => {
+        const kv = keep.cells[c], dv = drop.cells[c];
+        if (kv === "" && dv !== "") { keep.cells[c] = dv; log.push({ row: p.a, col: h, before: "", after: dv, rule: "Filled from duplicate row " + p.b }); }
+        else if (dv !== "" && dv.toLowerCase() !== kv.toLowerCase()) log.push({ row: p.b, col: h, before: dv, after: "", rule: "Dropped in merge. Row " + p.a + " keeps its own value" });
+      });
+      log.push({ row: p.b, col: "(whole row)", before: "", after: "", rule: "Merged into row " + p.a + " and left out of the clean file" });
+      removed.set(p.b, p.a);
+    }
+    const rows = result.rows.filter(r => !removed.has(r.row)).map(r => byRow.get(r.row));
+    return { rows, log, removed };
+  }
+
+  function toCSV(headers, rows) {
+    const q = v => {
+      const s = String(v);
+      return /[",\r\n]|^\s|\s$/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    return [headers, ...rows].map(r => r.map(q).join(",")).join("\r\n") + "\r\n";
+  }
+
+  return { TYPES, PROBLEMS, parseCSV, buildTable, detectType, clean, applyMerges, toCSV, similarName, cleanPhone, cleanPostal, cleanDate, cleanText };
+})();
+window.Cleanup = Cleanup;
+/* CORE-END */
+
+const SAMPLE_CSV = "Name,Email,Phone,Street address,City,Province,Postal code,Customer since\nMARIE-CLAIRE O'NEILL,marie-claire.oneill@example.org,519-555-0113,101 Bridgeport Rd E,Elmira,ON,N2S 1P3,2023-02-27\nHana Sato,hana.sato@example.org,519-555-0143,311 Queen St S,Kitchener,ON,12345,2025-08-06\nBob Chen,robert.chen@example.com,519-555-0170,31 Weber St N,Kitchener,ON,N2E 1B3,2025-09-12\nSofia Rossi,sofia.rossi@example.com,,199 Bridgeport Rd E,Kitchener,ON,N2K 2M7,2025-04-01\nWei Zhang,wei.zhang@example.org,519-555-0122,164 Belmont Ave W,Cambridge ,ON,N2C 2T2,2024-11-18\nSamuel  Adeyemi,samuel.adeyemi@example.com,519-555-0115,115 Queen St S,New Hamburg,ON,N2V 1H5,2025-04-04\nLeila Nasser,leila.nasser@example.net,,297 Bridgeport Rd E,Waterloo,ON,D2L 3G1,2023-06-02\nJohn Tremblay,j.tremblay.work@example.com,519-555-0104,38 University Ave E,Waterloo,ON,N2G 1L4,2024-10-02\nLiam Fraser,liam.fraser@example.net,(519) 555-0126,192 Highland Rd W,Cambridge,ON,N2J 2C6,2024-03-26\nÉLODIE GAGNÉ,elodie.gagne@example.net,519-555-0117,129 Weber St N,Waterloo,ON,N2X 1Z7,2023-06-08\nKofi Asante,kofi.asante@example.net,(226)5550150,360 Belmont Ave W,,ON,N2N 3N0,2024-03-20\nJon Tremblay,jon.tremblay@example.org,519-555-0104,38 University Ave E,Waterloo,ON,N2G 1L4,2022-05-09\nTessa Kaur,tessa.kaur@example.com,226-555-0145,325 Weber St N,Elmira,ON,N2H 3V5,2024/03/15\nArjun Raman,arjun.raman@example.net,519-555-0108,59 Frederick St,New Hamburg,ON,N2K 1M7,2022-09-17\nRobert Chen,robert.chen@example.com,519-555-0103,31 Weber St N,Kitchener,ON,N2E 1B3,2025-04-07\nEmily Harper,emily.harper@example.com,226-555-0151,367 Lancaster St E,Kitchener,ON,N2P 3X1,2025.06.30\ngrace liu,GRACE.LIU@EXAMPLE.NET,(519) 555-0102,24 Erb St W,Cambridge,ON,N2C 1T2,2024-03-05\nTom Nguyen,Tom.Nguyen@Example.com,519-555-0118,136 University Ave E,Cambridge,ON,N2Y 1J8,2024-07-10\nKaren Smith,karen.smith@example.org,519-555-0110,730 Lancaster St E,Cambridge,ON,N2N 1N0,2024-11-21\nMaya Patel,maya.patel@example.com,519-555-0100,10 King St W,Kitchener,ON,N2A 1A0,2022-01-01\nkevin mcdonald,kevin.mcdonald@example.net,519-555-0114,108 King St W,Kitchener,ON,N2T 1Y4,2024-03-02\nEthan Brooks,ethan.brooks@example.com,519-555-0124,178 Fischer-Hallman Rd,Kitchener,ON ,N2G 2L4,2022-01-22\nPriya Raman,priya.raman@example.org,519-555-0107,59 Frederick St,New Hamburg,ON,N2K 1M7,2025-08-15\nRavi Kapoor,ravi.kapoor@example.net,519-555-0138,276 Fischer-Hallman Rd,Kitchener,ON, N2Y 2J8,2025-02-30\nInes Carvalho,ines.carvalho@example.com,519-555-0121,157 Frederick St,KITCHENER,ON,N2B 2K1,2023-10-16\nOmar Haddad,omar.haddad@example.org,519-555-0101,17 Queen St S,Waterloo,ON,N2B 1K1,2023-02-03\nAisha Bello,aisha.bello@example.com,519-555-01322,241 Columbia St W,Waterloo,ON,N2S 2P3,2023-10-13\n  Hannah Weber ,hannah.weber@example.org,519-555-0116,122 Erb St W,,ON,N2W 1R6,2022-05-06\nMaya Patel,maya.patel@example.com,519-555-0100,10 King St W,Kitchener,ON,N2A 1A0,2022-01-01\nNadia Petrova,nadia.petrova@example.org,519-555-0131 x12,227 Weber St N,New Hamburg,ON,N2P 2X1,2025-08-09\nOwen Clarke,,519-555-0134,248 Victoria St S,Cambridge,ON,n2t2y4,2024-11-15\n,victor.lindqvist@example.com,519-555-0142,304 King St W,Cambridge,ON,N2O 4B7,2024-07-04\nIsaac Mensah,isaac.mensah@example.com,519-555-0136,262 Belmont Ave W,Waterloo,ON,N2W-2R6,07/11/2024\nRachel Bauer,rachel.bauer@example.net,519-555-0123,12  Queen St S,New Hamburg,ON,N2E 2B3,2025-12-20\nNoah Martin,noah.martin@example.net,519-555-0120,150 Victoria St S,waterloo,ON,N2A 2A0,2022-09-14\nDiego Morales,diego.morales@example.org,226-555-0146,332 University Ave E,Kitchener,ON,N2J 3C6,15/03/2024\nAmara Okeke,amara.okeke@example.org,5195550125,185 Ottawa St S,Waterloo,ON,N2H 2V5,2023-02-24\nGrace Liu,grace.liu@example.net,519-555-0102,24 Erb St W,Cambridge,ON,N2C 1T2,2024-03-05\nAnna Kowalski,anna.kowalski@example.net,519-555-0105,45 Columbia St W,Elmira,ON,N2H 1V5,2023-06-11\nDavid Smith,david.smith@example.com,519-555-0109,73 Lancaster St E,Waterloo,ON,N2M 1E9,2023-10-19\nLena Fischer, lena.fischer@example.org,519-555-0119,143 Columbia St W,Kitchener,ON,N2Z 1S9,2025-08-12\nAdam Kowal,adam.kowal@example.com,226-555-0148,346 Victoria St S,Kitchener,ON,N2L 3W8,\"March 4, 2025\"\nFarah Siddiqui,farah.siddiqui@example.com,519-555-0106,52 Victoria St S,Kitchener,ON,N2J 1C6,2024-07-13\nMarcus Reid,marcus.reid@example.net,519-555-0144,318 Erb St W,Waterloo,ON,N2G 3L4,05/05/2025\nJulia Novak,,519-555-0139,283 Ottawa St S,New Hamburg,ON,N2Z  2S9,2025-04-25\nCaleb Hughes,caleb.hughes@example.org,519-555-0140,290 Highland Rd W,Kitchener,ON,N2L 3G,2022-05-27\nYusuf Khan,yusuf.khan@example.com,519 555 0130,220 Erb St W,Kitchener,ON,N2N 2N0,2024-07-07\nFiona Walsh,fiona.walsh@example.net,(226)555-0147,339 Columbia St W,New Hamburg,ON,N2K 3M7,03/15/2024\nFarah Siddiqui,farah.s@example.org,226-555-0173,52 Victoria Street South,Kitchener,ON,N2J 1C6,2025-11-30\nSiobhan O'Brien,siobhan.obrien@example.net,519-555-0111 ext. 5,87 Ottawa St S,Kitchener,ON,N2P 1X1,2025-12-23\nLucas DeSouza,lucas.desouza@example.com,519-555-0112,94 Highland Rd W,Waterloo,ON,N2Z 1W4,2022-01-25\nZoe Laurent,zoe.laurent@example.org,519-555-0137,269 Lancaster St E,Elmira,ON,n2x2z7,02/01/2026\nOmar Haddad,omar.haddad@example.org,519-555-0101,17 Queen St S,Waterloo,ON,N2B 1K1,2023-02-03\nBen Hofstetter,ben.hofstetter@example.net,555-0131,234 University Ave E,Kitchener,ON,N2R 2G2,2022-09-11\nDaniel Moreau,daniel.moreau@example.org,226-555-0152,374 Fischer-Hallman Rd,Waterloo,ON,N2R 3G2,2023-7-4\nAnna Kowalsky,annak@example.net,519-555-0172,45 Columbia St W,Elmira,ON,N2H 1V5,2026-01-20\nChloe Dubois,chloe.dubois@example.net,1-519-555-0129,213 Queen St S,Elmira,ON,N2M 2E9,2023-06-05\nSara Lindberg,sara.lindberg@example.org,226-555-0149,353 Frederick St,Waterloo,ON,N2M 3E9,4 Mar 2025\nMei Tanaka,mei.tanaka@example.net,519-555-0135,255 Frederick St,Kitchener,ON,n2v 2h5,03/04/2025\nMateo Alvarez,mateo.alvarez@example.org,+1 519 555 0128,206 King St W,Waterloo,ON,N2L 2W8,2022-05-03\n";
+
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = { table: null, mapping: null, result: null, decisions: {}, name: "customers", showAll: { issues: false, changes: false }, pairLimit: 50 };
+  const PAIR_STEP = 50;
+  const DISPLAY_CAP = 500;
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  // show spaces that matter: leading, trailing and repeated
+  function showVal(s) {
+    if (s === "") return '<span class="empty-val">empty</span>';
+    let out = "";
+    for (let i = 0; i < s.length; i++) {
+      const c = s[i];
+      const edge = i === 0 || i === s.length - 1;
+      const rep = c === " " && (s[i - 1] === " " || s[i + 1] === " ");
+      if (/\s/.test(c) && (edge || rep || c !== " ")) out += '<span class="ws" title="space">\u2423</span>';
+      else out += (c === "@" && i > 0 ? "<wbr>" : "") + esc(c);
+    }
+    return out;
+  }
+
+  function setError(msg) { $("load-error").textContent = msg || ""; }
+
+  function load(text, label) {
+    setError(""); $("load-info").textContent = "";
+    $("step-results").hidden = true;
+    let table;
+    try {
+      if (!text || !text.trim()) throw Object.assign(new Error("There's nothing to read. Load the sample, choose a file, or paste CSV text."), { code: "empty" });
+      table = Cleanup.buildTable(Cleanup.parseCSV(text));
+    } catch (e) {
+      state.table = null;
+      $("step-map").hidden = true;
+      $("load-status").textContent = "";
+      setError(e.message);
+      return false;
+    }
+    state.table = table;
+    state.result = null;
+    state.decisions = {};
+    $("stale").hidden = true;
+    $("btn-clean").textContent = "Clean the data";
+    state.mapping = table.headers.map(h => {
+      const type = Cleanup.detectType(h);
+      return { type, required: type === "name" || type === "email" || type === "phone" };
+    });
+    const delimName = { ",": "commas", ";": "semicolons", "\t": "tabs" }[table.delimiter];
+    $("load-status").textContent = "Loaded " + table.rows.length + " rows and " + table.headers.length + " columns from " + label + ", separated by " + delimName + ".";
+    if (table.shape.length) $("load-info").textContent = table.shape.length + " row" + (table.shape.length > 1 ? "s have" : " has") + " a different number of values than the header. They're listed under cells that need attention.";
+    renderMapping();
+    $("step-map").hidden = false;
+    $("h-map").focus({ preventScroll: true });
+    $("step-map").scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    return true;
+  }
+
+  function renderMapping() {
+    const t = state.table;
+    const opts = Cleanup.TYPES.map(([v, l]) => '<option value="' + v + '">' + l + "</option>").join("");
+    $("map-body").innerHTML = t.headers.map((h, i) => {
+      const first = (t.rows.find(r => r.cells[i] !== "") || { cells: [] }).cells[i] || "";
+      return '<tr><th scope="row">' + esc(h) + "</th>" +
+        '<td><select data-col="' + i + '" aria-label="Treat ' + esc(h) + ' as">' + opts + "</select></td>" +
+        '<td><label class="check"><input type="checkbox" data-req="' + i + '" aria-label="' + esc(h) + ' is required"> <span class="req-text">Required</span></label></td>' +
+        "<td>" + (first ? esc(first.length > 40 ? first.slice(0, 40) + "..." : first) : '<span class="empty-val">empty</span>') + "</td></tr>";
+    }).join("");
+    t.headers.forEach((h, i) => {
+      $("map-body").querySelector('[data-col="' + i + '"]').value = state.mapping[i].type;
+      $("map-body").querySelector('[data-req="' + i + '"]').checked = state.mapping[i].required;
+    });
+  }
+
+  function markStale() {
+    if (!state.result) return;
+    const decided = Object.keys(state.decisions).length;
+    $("stale").textContent = "You changed a setting, so these results are out of date. Tap Clean the data to update them." + (decided ? " That also clears your " + decided + " duplicate " + (decided === 1 ? "decision" : "decisions") + "." : "");
+    $("stale").hidden = false;
+    $("btn-clean").textContent = "Clean the data again";
+  }
+  $("map-body").addEventListener("change", e => {
+    const el = e.target;
+    if (el.dataset.col !== undefined) state.mapping[+el.dataset.col].type = el.value;
+    if (el.dataset.req !== undefined) state.mapping[+el.dataset.req].required = el.checked;
+    markStale();
+  });
+  document.querySelectorAll('input[name="datemode"]').forEach(r => r.addEventListener("change", markStale));
+
+  function dateMode() { return document.querySelector('input[name="datemode"]:checked').value; }
+
+  function run() {
+    if (!state.table) return;
+    state.result = Cleanup.clean(state.table, state.mapping, dateMode());
+    state.decisions = {};
+    state.showAll = { issues: false, changes: false };
+    state.pairLimit = PAIR_STEP;
+    $("stale").hidden = true;
+    $("btn-clean").textContent = "Clean the data";
+    $("step-results").hidden = false;
+    renderResults();
+    $("h-results").focus();
+  }
+
+  function countBy(list, key) { const m = {}; for (const x of list) m[x[key]] = (m[x[key]] || 0) + 1; return m; }
+
+  function renderResults() {
+    const r = state.result;
+    const changedCells = r.changes.length;
+    const flagged = new Set(r.issues.filter(i => i.col !== "(whole row)").map(i => i.row + "|" + i.col)).size;
+    const parts = [
+      "<b>" + r.rows.length + "</b> rows checked.",
+      "<b>" + changedCells + "</b> " + (changedCells === 1 ? "cell" : "cells") + " changed.",
+      "<b>" + r.issues.length + "</b> " + (r.issues.length === 1 ? "problem needs" : "problems need") + " a person to check.",
+      "<b>" + r.pairs.length + "</b> possible duplicate " + (r.pairs.length === 1 ? "pair" : "pairs") + " to review."
+    ];
+    $("summary").innerHTML = parts.join(" ");
+    renderMap(flagged);
+    const cats = { "Spacing": "Spacing and capitalization", "Capitalization": "Spacing and capitalization", "Spacing and capitalization": "Spacing and capitalization", "Phone format": "Phone numbers", "Postal code format": "Postal codes" };
+    const byCat = {};
+    for (const c of r.changes) { const k = cats[c.rule] || (c.rule.startsWith("Date") ? "Dates" : c.rule); byCat[k] = (byCat[k] || 0) + 1; }
+    renderBars($("bars-changes"), byCat, "No cells needed changing.");
+    renderBars($("bars-problems"), Object.fromEntries(Object.entries(countBy(r.issues, "problem"))), "No problems found.");
+    renderPairs();
+    renderTables();
+  }
+
+  function renderBars(el, counts, emptyMsg) {
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) { el.innerHTML = '<p class="muted small">' + emptyMsg + "</p>"; return; }
+    const max = Math.max(...entries.map(e => e[1]));
+    el.innerHTML = entries.map(([k, n]) =>
+      '<div class="bar-row"><span>' + esc(k) + '</span><span class="bar-track" aria-hidden="true"><span class="bar-fill" style="display:block;width:' + (n / max * 100).toFixed(1) + '%"></span></span><span class="n">' + n + "</span></div>").join("");
+  }
+
+  function mapPer() {
+    const avail = $("cellmap").clientWidth || 340;
+    return Math.max(10, Math.min(50, Math.floor((avail - 124) / 14)));
+  }
+  function renderMap() {
+    const r = state.result;
+    const cols = r.headers.map((h, i) => i).filter(i => state.mapping[i].type !== "ignore");
+    const changed = new Set(r.changes.map(c => c.row + "|" + c.col));
+    const flagged = new Set(r.issues.filter(i => i.col !== "(whole row)").map(i => i.row + "|" + i.col));
+    // Drawn at real pixel size so labels stay 14px on every screen.
+    const per = mapPer(), cap = per * 10;
+    state.mapPer = per;
+    const shown = r.rows.slice(0, cap);
+    const bands = Math.ceil(shown.length / per);
+    const labelW = 124, cell = 14, gap = 3, bandGap = 28, fs = 14, top = 20;
+    const w = labelW + per * cell;
+    const bandH = cols.length * (cell + 2);
+    const h = bands * bandH + (bands - 1) * bandGap + top + 4;
+    const label = "Cell map of " + shown.length + " rows: " + changed.size + " cells changed, " + flagged.size + " cells need a person to check";
+    let svg = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="' + esc(label) + '">' +
+      '<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="#A32A3C"/><rect width="1.5" height="4" fill="#FFFFFF" fill-opacity=".55"/></pattern></defs>';
+    for (let b = 0; b < bands; b++) {
+      const y0 = b * (bandH + bandGap) + top;
+      const first = shown[b * per].row;
+      const last = shown[Math.min(shown.length, (b + 1) * per) - 1].row;
+      svg += '<text x="' + labelW + '" y="' + (y0 - 6) + '" font-size="' + fs + '" fill="#5F5873">Rows ' + first + " to " + last + "</text>";
+      cols.forEach((c, ci) => {
+        const y = y0 + ci * (cell + 2);
+        const name = r.headers[c];
+        svg += '<text x="' + (labelW - 8) + '" y="' + (y + cell - 2) + '" font-size="' + fs + '" text-anchor="end" fill="#221B35">' + esc(name.length > 14 ? name.slice(0, 13) + "..." : name) + "</text>";
+        for (let k = 0; k < per; k++) {
+          const row = shown[b * per + k];
+          if (!row) break;
+          const key = row.row + "|" + name;
+          const fill = flagged.has(key) ? "url(#hatch)" : changed.has(key) ? "#5A3DB8" : "#DDD5EE";
+          svg += '<rect x="' + (labelW + k * cell) + '" y="' + y + '" width="' + (cell - gap) + '" height="' + cell + '" rx="2" fill="' + fill + '"/>';
+        }
+      });
+    }
+    svg += "</svg>";
+    const note = r.rows.length > cap ? " The map shows the first " + cap + " of " + r.rows.length + " rows. The tables and downloads cover all of them." : "";
+    $("cellmap").innerHTML = svg +
+      '<ul class="legend"><li><span class="sw sw-same"></span>Unchanged</li><li><span class="sw sw-changed"></span>Changed</li><li><span class="sw sw-flag"></span>Needs a person to check</li></ul>' +
+      "<figcaption>Each square is one cell. Columns run down, rows run across, " + per + " rows per band." + note + "</figcaption>";
+  }
+
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (state.result && !$("step-results").hidden && mapPer() !== state.mapPer) renderMap();
+    }, 150);
+  });
+
+  function renderPairs() {
+    const r = state.result;
+    if (!r.pairs.length) { $("pairs").innerHTML = '<p class="muted">No likely duplicates found.</p>'; return; }
+    const applied = Cleanup.applyMerges(r, state.decisions);
+    const left = r.pairs.length - state.pairLimit;
+    const more = left > 0 ? '<div class="actions"><button class="btn btn-quiet btn-small" id="more-pairs" type="button">Show ' + Math.min(PAIR_STEP, left) + " more (" + left + " not shown)</button></div>" : "";
+    $("pairs").innerHTML = r.pairs.slice(0, state.pairLimit).map(p => {
+      const key = p.a + "-" + p.b;
+      const dec = state.decisions[key];
+      const ra = r.rows[p.ia].cells, rb = r.rows[p.ib].cells;
+      const blocked = !dec && (applied.removed.has(p.a) || applied.removed.has(p.b));
+      const rowsHtml = r.headers.map((h, c) => {
+        if (state.mapping[c].type === "ignore" && ra[c] === "" && rb[c] === "") return "";
+        const diff = ra[c].toLowerCase() !== rb[c].toLowerCase();
+        const mark = diff ? '<span class="sr-only"> (differs)</span>' : "";
+        return "<tr><th scope=\"row\">" + esc(h) + "</th><td" + (diff ? ' class="diff"' : "") + ">" + showVal(ra[c]) + mark + "</td><td" + (diff ? ' class="diff"' : "") + ">" + showVal(rb[c]) + mark + "</td></tr>";
+      }).join("");
+      let controls;
+      if (dec === "merge") controls = '<p class="outcome">Merged. Row ' + p.b + ' will be left out of the clean file.</p><div class="actions"><button class="btn btn-quiet btn-small" data-undo="' + key + '" type="button">Undo</button></div>';
+      else if (dec === "keep") controls = '<p class="outcome">Kept both rows.</p><div class="actions"><button class="btn btn-quiet btn-small" data-undo="' + key + '" type="button">Undo</button></div>';
+      else if (blocked) controls = '<p class="outcome">One of these rows was already merged in another pair, so this pair can\'t be merged too.</p>';
+      else controls = '<div class="actions"><button class="btn btn-primary btn-small" data-merge="' + key + '" type="button">Merge into row ' + p.a + '</button><button class="btn btn-quiet btn-small" data-keep="' + key + '" type="button">Keep both</button></div>';
+      return '<article class="pair' + (dec === "merge" ? " is-merged" : dec === "keep" ? " is-kept" : "") + '" data-pair="' + key + '" data-type="' + p.type + '">' +
+        "<h4>Rows " + p.a + " and " + p.b + '<span class="kind">' + (p.type === "exact" ? "Exact" : "Possible") + "</span></h4>" +
+        '<p class="reason">' + p.reasons.map(esc).join(". ") + ".</p>" +
+        '<div class="scroll"><table><thead><tr><th scope="col">Column</th><th scope="col">Row ' + p.a + '</th><th scope="col">Row ' + p.b + "</th></tr></thead><tbody>" + rowsHtml + "</tbody></table></div>" +
+        controls + "</article>";
+    }).join("") + more;
+  }
+
+  $("pairs").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.id === "more-pairs") {
+      const firstNew = state.pairLimit;
+      state.pairLimit += PAIR_STEP;
+      renderPairs();
+      const next = $("pairs").querySelectorAll(".pair")[firstNew];
+      if (next) { next.tabIndex = -1; next.focus(); }
+      return;
+    }
+    const key = b.dataset.merge || b.dataset.keep || b.dataset.undo;
+    if (b.dataset.merge) state.decisions[key] = "merge";
+    else if (b.dataset.keep) state.decisions[key] = "keep";
+    else delete state.decisions[key];
+    renderPairs();
+    renderTables();
+    const card = $("pairs").querySelector('[data-pair="' + key + '"] button');
+    if (card) card.focus();
+  });
+
+  function allChanges() {
+    const merged = Cleanup.applyMerges(state.result, state.decisions);
+    return state.result.changes.concat(merged.log).sort((a, b) => a.row - b.row);
+  }
+  function openPairIssues() {
+    return state.result.pairs.filter(p => !state.decisions[p.a + "-" + p.b]).map(p => ({ row: p.b, col: "(whole row)", value: "", problem: "Possible duplicate of row " + p.a + ": " + p.reasons.join(", ").toLowerCase() }));
+  }
+
+  function table(headers, rows, key, noun) {
+    if (!rows.length) return '<p class="muted">None.</p>';
+    const limit = state.showAll[key] ? DISPLAY_CAP : 25;
+    const shown = rows.slice(0, limit);
+    let html = '<div class="scroll stack-wrap"><table class="stack" role="table"><thead role="rowgroup"><tr role="row">' + headers.map(h => '<th scope="col" role="columnheader">' + h + "</th>").join("") + '</tr></thead><tbody role="rowgroup">' +
+      shown.map(r => '<tr role="row">' + r.map((v, i) => '<td role="cell" data-label="' + headers[i] + '"' + (i === 0 ? ' class="num"' : "") + ">" + v + "</td>").join("") + "</tr>").join("") + "</tbody></table></div>";
+    if (rows.length > shown.length) {
+      if (!state.showAll[key]) html += '<div class="actions"><button class="btn btn-quiet btn-small" data-more="' + key + '" type="button">Show all ' + rows.length + " " + noun + "</button></div>";
+      else html += '<p class="small muted">Showing the first ' + DISPLAY_CAP + " of " + rows.length + ". The download has all of them.</p>";
+    }
+    return html;
+  }
+
+  function renderTables() {
+    const r = state.result;
+    const iss = r.issues.concat([]).sort((a, b) => a.row - b.row);
+    $("issues").innerHTML = table(["Row", "Column", "Value", "Problem"], iss.map(i => [i.row, esc(i.col), i.col === "(whole row)" ? esc(i.value) : showVal(i.value), esc(i.problem)]), "issues", "problems");
+    const ch = allChanges();
+    $("changes").innerHTML = table(["Row", "Column", "Before", "After", "Rule"], ch.map(c => [c.row, esc(c.col), c.col === "(whole row)" ? "" : showVal(c.before), c.col === "(whole row)" ? "" : showVal(c.after), esc(c.rule)]), "changes", "changes");
+  }
+  document.addEventListener("click", e => {
+    const b = e.target.closest("[data-more]");
+    if (!b) return;
+    state.showAll[b.dataset.more] = true;
+    renderTables();
+  });
+
+  function download(filename, text) {
+    const blob = new Blob(["\uFEFF" + text], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+  $("dl-clean").addEventListener("click", () => {
+    const m = Cleanup.applyMerges(state.result, state.decisions);
+    download(state.name + "-clean.csv", Cleanup.toCSV(state.result.headers, m.rows.map(r => r.cells)));
+  });
+  $("dl-log").addEventListener("click", () => {
+    download(state.name + "-change-log.csv", Cleanup.toCSV(["Row", "Column", "Before", "After", "Rule"], allChanges().map(c => [c.row, c.col, c.before, c.after, c.rule])));
+  });
+  $("dl-issues").addEventListener("click", () => {
+    const all = state.result.issues.concat(openPairIssues()).sort((a, b) => a.row - b.row);
+    download(state.name + "-issues.csv", Cleanup.toCSV(["Row", "Column", "Value", "Problem"], all.map(i => [i.row, i.col, i.value, i.problem])));
+  });
+
+  $("btn-sample").addEventListener("click", () => { state.name = "sample-customers"; load(SAMPLE_CSV, "the sample data"); });
+  $("btn-file").addEventListener("click", () => $("file").click());
+  $("file").addEventListener("change", () => {
+    const f = $("file").files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let text, note = "";
+      try { text = new TextDecoder("utf-8", { fatal: true }).decode(reader.result); }
+      catch (e) { text = new TextDecoder("windows-1252").decode(reader.result); note = "This file isn't UTF-8, so it was read as Windows-1252, the usual Excel encoding on Windows. Check that accented letters look right."; }
+      state.name = f.name.replace(/\.[^.]+$/, "").replace(/[^\w-]+/g, "-") || "customers";
+      if (load(text, f.name) && note) $("load-info").textContent = (($("load-info").textContent || "") + " " + note).trim();
+      $("file").value = "";
+    };
+    reader.onerror = () => setError("The file couldn't be read. Try saving it again as CSV.");
+    reader.readAsArrayBuffer(f);
+  });
+  $("btn-paste").addEventListener("click", () => { state.name = "pasted-customers"; load($("paste").value, "the pasted text"); });
+  $("btn-clean").addEventListener("click", run);
+  $("btn-reset").addEventListener("click", () => {
+    state.table = null; state.result = null; state.decisions = {};
+    $("step-map").hidden = true; $("step-results").hidden = true;
+    $("load-status").textContent = ""; $("load-info").textContent = ""; setError("");
+    $("paste").value = "";
+    $("btn-sample").focus();
+  });
+})();
+</script>
+</body>
+</html>

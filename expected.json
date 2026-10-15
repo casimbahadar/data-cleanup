@@ -1,0 +1,968 @@
+{
+ "columns": [
+  "Name",
+  "Email",
+  "Phone",
+  "Street address",
+  "City",
+  "Province",
+  "Postal code",
+  "Customer since"
+ ],
+ "clean": [
+  [
+   "Marie-Claire O'Neill",
+   "marie-claire.oneill@example.org",
+   "519-555-0113",
+   "101 Bridgeport Rd E",
+   "Elmira",
+   "ON",
+   "N2S 1P3",
+   "2023-02-27"
+  ],
+  [
+   "Hana Sato",
+   "hana.sato@example.org",
+   "519-555-0143",
+   "311 Queen St S",
+   "Kitchener",
+   "ON",
+   "12345",
+   "2025-08-06"
+  ],
+  [
+   "Bob Chen",
+   "robert.chen@example.com",
+   "519-555-0170",
+   "31 Weber St N",
+   "Kitchener",
+   "ON",
+   "N2E 1B3",
+   "2025-09-12"
+  ],
+  [
+   "Sofia Rossi",
+   "sofia.rossi@example.com",
+   "",
+   "199 Bridgeport Rd E",
+   "Kitchener",
+   "ON",
+   "N2K 2M7",
+   "2025-04-01"
+  ],
+  [
+   "Wei Zhang",
+   "wei.zhang@example.org",
+   "519-555-0122",
+   "164 Belmont Ave W",
+   "Cambridge",
+   "ON",
+   "N2C 2T2",
+   "2024-11-18"
+  ],
+  [
+   "Samuel Adeyemi",
+   "samuel.adeyemi@example.com",
+   "519-555-0115",
+   "115 Queen St S",
+   "New Hamburg",
+   "ON",
+   "N2V 1H5",
+   "2025-04-04"
+  ],
+  [
+   "Leila Nasser",
+   "leila.nasser@example.net",
+   "",
+   "297 Bridgeport Rd E",
+   "Waterloo",
+   "ON",
+   "D2L 3G1",
+   "2023-06-02"
+  ],
+  [
+   "John Tremblay",
+   "j.tremblay.work@example.com",
+   "519-555-0104",
+   "38 University Ave E",
+   "Waterloo",
+   "ON",
+   "N2G 1L4",
+   "2024-10-02"
+  ],
+  [
+   "Liam Fraser",
+   "liam.fraser@example.net",
+   "519-555-0126",
+   "192 Highland Rd W",
+   "Cambridge",
+   "ON",
+   "N2J 2C6",
+   "2024-03-26"
+  ],
+  [
+   "Élodie Gagné",
+   "elodie.gagne@example.net",
+   "519-555-0117",
+   "129 Weber St N",
+   "Waterloo",
+   "ON",
+   "N2X 1Z7",
+   "2023-06-08"
+  ],
+  [
+   "Kofi Asante",
+   "kofi.asante@example.net",
+   "226-555-0150",
+   "360 Belmont Ave W",
+   "",
+   "ON",
+   "N2N 3N0",
+   "2024-03-20"
+  ],
+  [
+   "Jon Tremblay",
+   "jon.tremblay@example.org",
+   "519-555-0104",
+   "38 University Ave E",
+   "Waterloo",
+   "ON",
+   "N2G 1L4",
+   "2022-05-09"
+  ],
+  [
+   "Tessa Kaur",
+   "tessa.kaur@example.com",
+   "226-555-0145",
+   "325 Weber St N",
+   "Elmira",
+   "ON",
+   "N2H 3V5",
+   "2024-03-15"
+  ],
+  [
+   "Arjun Raman",
+   "arjun.raman@example.net",
+   "519-555-0108",
+   "59 Frederick St",
+   "New Hamburg",
+   "ON",
+   "N2K 1M7",
+   "2022-09-17"
+  ],
+  [
+   "Robert Chen",
+   "robert.chen@example.com",
+   "519-555-0103",
+   "31 Weber St N",
+   "Kitchener",
+   "ON",
+   "N2E 1B3",
+   "2025-04-07"
+  ],
+  [
+   "Emily Harper",
+   "emily.harper@example.com",
+   "226-555-0151",
+   "367 Lancaster St E",
+   "Kitchener",
+   "ON",
+   "N2P 3X1",
+   "2025-06-30"
+  ],
+  [
+   "Grace Liu",
+   "grace.liu@example.net",
+   "519-555-0102",
+   "24 Erb St W",
+   "Cambridge",
+   "ON",
+   "N2C 1T2",
+   "2024-03-05"
+  ],
+  [
+   "Tom Nguyen",
+   "tom.nguyen@example.com",
+   "519-555-0118",
+   "136 University Ave E",
+   "Cambridge",
+   "ON",
+   "N2Y 1J8",
+   "2024-07-10"
+  ],
+  [
+   "Karen Smith",
+   "karen.smith@example.org",
+   "519-555-0110",
+   "730 Lancaster St E",
+   "Cambridge",
+   "ON",
+   "N2N 1N0",
+   "2024-11-21"
+  ],
+  [
+   "Maya Patel",
+   "maya.patel@example.com",
+   "519-555-0100",
+   "10 King St W",
+   "Kitchener",
+   "ON",
+   "N2A 1A0",
+   "2022-01-01"
+  ],
+  [
+   "Kevin McDonald",
+   "kevin.mcdonald@example.net",
+   "519-555-0114",
+   "108 King St W",
+   "Kitchener",
+   "ON",
+   "N2T 1Y4",
+   "2024-03-02"
+  ],
+  [
+   "Ethan Brooks",
+   "ethan.brooks@example.com",
+   "519-555-0124",
+   "178 Fischer-Hallman Rd",
+   "Kitchener",
+   "ON",
+   "N2G 2L4",
+   "2022-01-22"
+  ],
+  [
+   "Priya Raman",
+   "priya.raman@example.org",
+   "519-555-0107",
+   "59 Frederick St",
+   "New Hamburg",
+   "ON",
+   "N2K 1M7",
+   "2025-08-15"
+  ],
+  [
+   "Ravi Kapoor",
+   "ravi.kapoor@example.net",
+   "519-555-0138",
+   "276 Fischer-Hallman Rd",
+   "Kitchener",
+   "ON",
+   "N2Y 2J8",
+   "2025-02-30"
+  ],
+  [
+   "Ines Carvalho",
+   "ines.carvalho@example.com",
+   "519-555-0121",
+   "157 Frederick St",
+   "Kitchener",
+   "ON",
+   "N2B 2K1",
+   "2023-10-16"
+  ],
+  [
+   "Omar Haddad",
+   "omar.haddad@example.org",
+   "519-555-0101",
+   "17 Queen St S",
+   "Waterloo",
+   "ON",
+   "N2B 1K1",
+   "2023-02-03"
+  ],
+  [
+   "Aisha Bello",
+   "aisha.bello@example.com",
+   "519-555-01322",
+   "241 Columbia St W",
+   "Waterloo",
+   "ON",
+   "N2S 2P3",
+   "2023-10-13"
+  ],
+  [
+   "Hannah Weber",
+   "hannah.weber@example.org",
+   "519-555-0116",
+   "122 Erb St W",
+   "",
+   "ON",
+   "N2W 1R6",
+   "2022-05-06"
+  ],
+  [
+   "Maya Patel",
+   "maya.patel@example.com",
+   "519-555-0100",
+   "10 King St W",
+   "Kitchener",
+   "ON",
+   "N2A 1A0",
+   "2022-01-01"
+  ],
+  [
+   "Nadia Petrova",
+   "nadia.petrova@example.org",
+   "519-555-0131 ext. 12",
+   "227 Weber St N",
+   "New Hamburg",
+   "ON",
+   "N2P 2X1",
+   "2025-08-09"
+  ],
+  [
+   "Owen Clarke",
+   "",
+   "519-555-0134",
+   "248 Victoria St S",
+   "Cambridge",
+   "ON",
+   "N2T 2Y4",
+   "2024-11-15"
+  ],
+  [
+   "",
+   "victor.lindqvist@example.com",
+   "519-555-0142",
+   "304 King St W",
+   "Cambridge",
+   "ON",
+   "N2O 4B7",
+   "2024-07-04"
+  ],
+  [
+   "Isaac Mensah",
+   "isaac.mensah@example.com",
+   "519-555-0136",
+   "262 Belmont Ave W",
+   "Waterloo",
+   "ON",
+   "N2W 2R6",
+   "07/11/2024"
+  ],
+  [
+   "Rachel Bauer",
+   "rachel.bauer@example.net",
+   "519-555-0123",
+   "12 Queen St S",
+   "New Hamburg",
+   "ON",
+   "N2E 2B3",
+   "2025-12-20"
+  ],
+  [
+   "Noah Martin",
+   "noah.martin@example.net",
+   "519-555-0120",
+   "150 Victoria St S",
+   "Waterloo",
+   "ON",
+   "N2A 2A0",
+   "2022-09-14"
+  ],
+  [
+   "Diego Morales",
+   "diego.morales@example.org",
+   "226-555-0146",
+   "332 University Ave E",
+   "Kitchener",
+   "ON",
+   "N2J 3C6",
+   "2024-03-15"
+  ],
+  [
+   "Amara Okeke",
+   "amara.okeke@example.org",
+   "519-555-0125",
+   "185 Ottawa St S",
+   "Waterloo",
+   "ON",
+   "N2H 2V5",
+   "2023-02-24"
+  ],
+  [
+   "Grace Liu",
+   "grace.liu@example.net",
+   "519-555-0102",
+   "24 Erb St W",
+   "Cambridge",
+   "ON",
+   "N2C 1T2",
+   "2024-03-05"
+  ],
+  [
+   "Anna Kowalski",
+   "anna.kowalski@example.net",
+   "519-555-0105",
+   "45 Columbia St W",
+   "Elmira",
+   "ON",
+   "N2H 1V5",
+   "2023-06-11"
+  ],
+  [
+   "David Smith",
+   "david.smith@example.com",
+   "519-555-0109",
+   "73 Lancaster St E",
+   "Waterloo",
+   "ON",
+   "N2M 1E9",
+   "2023-10-19"
+  ],
+  [
+   "Lena Fischer",
+   "lena.fischer@example.org",
+   "519-555-0119",
+   "143 Columbia St W",
+   "Kitchener",
+   "ON",
+   "N2Z 1S9",
+   "2025-08-12"
+  ],
+  [
+   "Adam Kowal",
+   "adam.kowal@example.com",
+   "226-555-0148",
+   "346 Victoria St S",
+   "Kitchener",
+   "ON",
+   "N2L 3W8",
+   "2025-03-04"
+  ],
+  [
+   "Farah Siddiqui",
+   "farah.siddiqui@example.com",
+   "519-555-0106",
+   "52 Victoria St S",
+   "Kitchener",
+   "ON",
+   "N2J 1C6",
+   "2024-07-13"
+  ],
+  [
+   "Marcus Reid",
+   "marcus.reid@example.net",
+   "519-555-0144",
+   "318 Erb St W",
+   "Waterloo",
+   "ON",
+   "N2G 3L4",
+   "2025-05-05"
+  ],
+  [
+   "Julia Novak",
+   "",
+   "519-555-0139",
+   "283 Ottawa St S",
+   "New Hamburg",
+   "ON",
+   "N2Z 2S9",
+   "2025-04-25"
+  ],
+  [
+   "Caleb Hughes",
+   "caleb.hughes@example.org",
+   "519-555-0140",
+   "290 Highland Rd W",
+   "Kitchener",
+   "ON",
+   "N2L 3G",
+   "2022-05-27"
+  ],
+  [
+   "Yusuf Khan",
+   "yusuf.khan@example.com",
+   "519-555-0130",
+   "220 Erb St W",
+   "Kitchener",
+   "ON",
+   "N2N 2N0",
+   "2024-07-07"
+  ],
+  [
+   "Fiona Walsh",
+   "fiona.walsh@example.net",
+   "226-555-0147",
+   "339 Columbia St W",
+   "New Hamburg",
+   "ON",
+   "N2K 3M7",
+   "2024-03-15"
+  ],
+  [
+   "Farah Siddiqui",
+   "farah.s@example.org",
+   "226-555-0173",
+   "52 Victoria Street South",
+   "Kitchener",
+   "ON",
+   "N2J 1C6",
+   "2025-11-30"
+  ],
+  [
+   "Siobhan O'Brien",
+   "siobhan.obrien@example.net",
+   "519-555-0111 ext. 5",
+   "87 Ottawa St S",
+   "Kitchener",
+   "ON",
+   "N2P 1X1",
+   "2025-12-23"
+  ],
+  [
+   "Lucas DeSouza",
+   "lucas.desouza@example.com",
+   "519-555-0112",
+   "94 Highland Rd W",
+   "Waterloo",
+   "ON",
+   "N2Z 1W4",
+   "2022-01-25"
+  ],
+  [
+   "Zoe Laurent",
+   "zoe.laurent@example.org",
+   "519-555-0137",
+   "269 Lancaster St E",
+   "Elmira",
+   "ON",
+   "N2X 2Z7",
+   "02/01/2026"
+  ],
+  [
+   "Omar Haddad",
+   "omar.haddad@example.org",
+   "519-555-0101",
+   "17 Queen St S",
+   "Waterloo",
+   "ON",
+   "N2B 1K1",
+   "2023-02-03"
+  ],
+  [
+   "Ben Hofstetter",
+   "ben.hofstetter@example.net",
+   "555-0131",
+   "234 University Ave E",
+   "Kitchener",
+   "ON",
+   "N2R 2G2",
+   "2022-09-11"
+  ],
+  [
+   "Daniel Moreau",
+   "daniel.moreau@example.org",
+   "226-555-0152",
+   "374 Fischer-Hallman Rd",
+   "Waterloo",
+   "ON",
+   "N2R 3G2",
+   "2023-07-04"
+  ],
+  [
+   "Anna Kowalsky",
+   "annak@example.net",
+   "519-555-0172",
+   "45 Columbia St W",
+   "Elmira",
+   "ON",
+   "N2H 1V5",
+   "2026-01-20"
+  ],
+  [
+   "Chloe Dubois",
+   "chloe.dubois@example.net",
+   "519-555-0129",
+   "213 Queen St S",
+   "Elmira",
+   "ON",
+   "N2M 2E9",
+   "2023-06-05"
+  ],
+  [
+   "Sara Lindberg",
+   "sara.lindberg@example.org",
+   "226-555-0149",
+   "353 Frederick St",
+   "Waterloo",
+   "ON",
+   "N2M 3E9",
+   "2025-03-04"
+  ],
+  [
+   "Mei Tanaka",
+   "mei.tanaka@example.net",
+   "519-555-0135",
+   "255 Frederick St",
+   "Kitchener",
+   "ON",
+   "N2V 2H5",
+   "03/04/2025"
+  ],
+  [
+   "Mateo Alvarez",
+   "mateo.alvarez@example.org",
+   "519-555-0128",
+   "206 King St W",
+   "Waterloo",
+   "ON",
+   "N2L 2W8",
+   "2022-05-03"
+  ]
+ ],
+ "changes": [
+  [
+   2,
+   "Name",
+   "text"
+  ],
+  [
+   6,
+   "City",
+   "text"
+  ],
+  [
+   7,
+   "Name",
+   "text"
+  ],
+  [
+   10,
+   "Phone",
+   "phone"
+  ],
+  [
+   11,
+   "Name",
+   "text"
+  ],
+  [
+   12,
+   "Phone",
+   "phone"
+  ],
+  [
+   14,
+   "Customer since",
+   "date"
+  ],
+  [
+   17,
+   "Customer since",
+   "date"
+  ],
+  [
+   18,
+   "Email",
+   "text"
+  ],
+  [
+   18,
+   "Name",
+   "text"
+  ],
+  [
+   18,
+   "Phone",
+   "phone"
+  ],
+  [
+   19,
+   "Email",
+   "text"
+  ],
+  [
+   22,
+   "Name",
+   "text"
+  ],
+  [
+   23,
+   "Province",
+   "text"
+  ],
+  [
+   25,
+   "Postal code",
+   "postal"
+  ],
+  [
+   26,
+   "City",
+   "text"
+  ],
+  [
+   29,
+   "Name",
+   "text"
+  ],
+  [
+   31,
+   "Phone",
+   "phone"
+  ],
+  [
+   32,
+   "Postal code",
+   "postal"
+  ],
+  [
+   34,
+   "Postal code",
+   "postal"
+  ],
+  [
+   35,
+   "Street address",
+   "text"
+  ],
+  [
+   36,
+   "City",
+   "text"
+  ],
+  [
+   37,
+   "Customer since",
+   "date"
+  ],
+  [
+   38,
+   "Phone",
+   "phone"
+  ],
+  [
+   42,
+   "Email",
+   "text"
+  ],
+  [
+   43,
+   "Customer since",
+   "date"
+  ],
+  [
+   45,
+   "Customer since",
+   "date"
+  ],
+  [
+   46,
+   "Postal code",
+   "postal"
+  ],
+  [
+   48,
+   "Phone",
+   "phone"
+  ],
+  [
+   49,
+   "Customer since",
+   "date"
+  ],
+  [
+   49,
+   "Phone",
+   "phone"
+  ],
+  [
+   53,
+   "Postal code",
+   "postal"
+  ],
+  [
+   56,
+   "Customer since",
+   "date"
+  ],
+  [
+   58,
+   "Phone",
+   "phone"
+  ],
+  [
+   59,
+   "Customer since",
+   "date"
+  ],
+  [
+   60,
+   "Postal code",
+   "postal"
+  ],
+  [
+   61,
+   "Phone",
+   "phone"
+  ]
+ ],
+ "flags": [
+  [
+   3,
+   "Postal code",
+   "postal_invalid"
+  ],
+  [
+   5,
+   "Phone",
+   "missing"
+  ],
+  [
+   8,
+   "Phone",
+   "missing"
+  ],
+  [
+   8,
+   "Postal code",
+   "postal_invalid"
+  ],
+  [
+   25,
+   "Customer since",
+   "date_impossible"
+  ],
+  [
+   28,
+   "Phone",
+   "phone_invalid"
+  ],
+  [
+   32,
+   "Email",
+   "missing"
+  ],
+  [
+   33,
+   "Name",
+   "missing"
+  ],
+  [
+   33,
+   "Postal code",
+   "postal_invalid"
+  ],
+  [
+   34,
+   "Customer since",
+   "date_ambiguous"
+  ],
+  [
+   46,
+   "Email",
+   "missing"
+  ],
+  [
+   47,
+   "Postal code",
+   "postal_invalid"
+  ],
+  [
+   53,
+   "Customer since",
+   "date_ambiguous"
+  ],
+  [
+   55,
+   "Phone",
+   "phone_invalid"
+  ],
+  [
+   60,
+   "Customer since",
+   "date_ambiguous"
+  ]
+ ],
+ "pairs": [
+  [
+   "near",
+   4,
+   16
+  ],
+  [
+   "near",
+   9,
+   13
+  ],
+  [
+   "exact",
+   18,
+   39
+  ],
+  [
+   "exact",
+   21,
+   30
+  ],
+  [
+   "exact",
+   27,
+   54
+  ],
+  [
+   "near",
+   40,
+   57
+  ],
+  [
+   "near",
+   44,
+   50
+  ]
+ ],
+ "chen": {
+  "rows": [
+   4,
+   16
+  ],
+  "names": {
+   "16": "Robert Chen",
+   "4": "Bob Chen"
+  }
+ },
+ "ambiguous": {
+  "60": {
+   "day": "2025-04-03",
+   "month": "2025-03-04"
+  },
+  "34": {
+   "day": "2024-11-07",
+   "month": "2024-07-11"
+  },
+  "53": {
+   "day": "2026-01-02",
+   "month": "2026-02-01"
+  }
+ },
+ "counts": {
+  "changes": {
+   "text": 14,
+   "phone": 9,
+   "postal": 6,
+   "date": 8
+  },
+  "flags": {
+   "phone_invalid": 2,
+   "postal_invalid": 4,
+   "date_ambiguous": 3,
+   "date_impossible": 1,
+   "missing": 5
+  },
+  "changes_total": 37,
+  "flags_total": 15
+ },
+ "traps": {
+  "raman": [
+   24,
+   15
+  ],
+  "smith": [
+   41,
+   20
+  ],
+  "obrien": 51,
+  "desouza": 52
+ }
+}
