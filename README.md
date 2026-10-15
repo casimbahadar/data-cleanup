@@ -2,7 +2,7 @@
 
 A browser tool that cleans a customer spreadsheet saved as CSV and shows every change it made. It is a demo with made-up sample data.
 
-Live: https://casimbahadar.github.io/demo-data-cleanup/
+Live: https://casimbahadar.github.io/data-cleanup/
 
 ## What it does
 
