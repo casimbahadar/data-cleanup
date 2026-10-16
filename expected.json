@@ -278,7 +278,7 @@
    "Waterloo",
    "ON",
    "N2S 2P3",
-   "2023-10-13"
+   "2024-01-15"
   ],
   [
    "Hannah Weber",
@@ -548,7 +548,7 @@
    "Kitchener",
    "ON",
    "N2R 2G2",
-   "2022-09-11"
+   "2025-03-04"
   ],
   [
    "Daniel Moreau",
@@ -572,7 +572,7 @@
   ],
   [
    "Chloe Dubois",
-   "chloe.dubois@example.net",
+   "chloe.dubois@@example.org",
    "519-555-0129",
    "213 Queen St S",
    "Elmira",
@@ -602,7 +602,7 @@
   ],
   [
    "Mateo Alvarez",
-   "mateo.alvarez@example.org",
+   "mateo.alvarez@example",
    "519-555-0128",
    "206 King St W",
    "Waterloo",
@@ -616,6 +616,11 @@
    2,
    "Name",
    "text"
+  ],
+  [
+   5,
+   "Province",
+   "province"
   ],
   [
    6,
@@ -693,6 +698,11 @@
    "text"
   ],
   [
+   28,
+   "Customer since",
+   "date"
+  ],
+  [
    29,
    "Name",
    "text"
@@ -711,6 +721,11 @@
    34,
    "Postal code",
    "postal"
+  ],
+  [
+   34,
+   "Province",
+   "province"
   ],
   [
    35,
@@ -771,6 +786,16 @@
    53,
    "Postal code",
    "postal"
+  ],
+  [
+   53,
+   "Province",
+   "province"
+  ],
+  [
+   55,
+   "Customer since",
+   "date"
   ],
   [
    56,
@@ -870,9 +895,19 @@
    "phone_invalid"
   ],
   [
+   58,
+   "Email",
+   "email_invalid"
+  ],
+  [
    60,
    "Customer since",
    "date_ambiguous"
+  ],
+  [
+   61,
+   "Email",
+   "email_invalid"
   ]
  ],
  "pairs": [
@@ -941,17 +976,19 @@
    "text": 14,
    "phone": 9,
    "postal": 6,
-   "date": 8
+   "date": 10,
+   "province": 3
   },
   "flags": {
    "phone_invalid": 2,
    "postal_invalid": 4,
    "date_ambiguous": 3,
    "date_impossible": 1,
+   "email_invalid": 2,
    "missing": 5
   },
-  "changes_total": 37,
-  "flags_total": 15
+  "changes_total": 42,
+  "flags_total": 17
  },
  "traps": {
   "raman": [

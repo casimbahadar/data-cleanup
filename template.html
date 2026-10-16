@@ -179,6 +179,9 @@ figcaption { font-size: 0.9375rem; color: var(--slate); margin-top: var(--s2); }
 footer { border-top: 1px solid var(--line); padding-block: var(--s6) var(--s12); font-size: 0.9375rem; color: var(--slate); }
 footer p { margin: 0 0 var(--s2); }
 
+.intro-short { padding-bottom: 0; }
+.intro-short + .step { border-top: 0; padding-top: var(--s2); }
+.linkish { font: inherit; color: var(--violet); background: none; border: 0; padding: 0; text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 0.2em; cursor: pointer; display: inline-flex; align-items: center; min-height: 2.75rem; font-weight: 650; }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }
 </style>
@@ -192,10 +195,9 @@ footer p { margin: 0 0 var(--s2); }
 </header>
 
 <main id="main">
-  <div class="wrap intro">
+  <div class="wrap intro intro-short">
     <h1>Clean up a customer list</h1>
-    <p class="lede">Load a customer spreadsheet saved as CSV. The tool fixes spacing and capitalization, puts phone numbers, postal codes and dates into one format, flags missing information, and lists possible duplicates for you to check. Every change is logged cell by cell.</p>
-    <div class="privacy"><p><strong>Your file stays on this device.</strong> This page reads and cleans it in your browser, and its security settings block it from sending your data anywhere.</p></div>
+    <p class="lede">Fixes, flags and possible duplicates in a customer spreadsheet, with every change logged.</p>
   </div>
 
   <section class="wrap step" aria-labelledby="h-load">
@@ -205,7 +207,13 @@ footer p { margin: 0 0 var(--s2); }
       <button class="btn btn-quiet" id="btn-file" type="button">Choose a CSV file</button>
       <input type="file" id="file" accept=".csv,.txt,text/csv,text/plain" hidden>
     </div>
-    <p class="small muted">The sample is 60 fictional customers. Phone numbers use the 555-01xx range, which is set aside for fiction, and emails use example domains.</p>
+    <div class="privacy"><p><strong>Your file stays on this device.</strong> This page reads and cleans it in your browser, and its security settings block it from sending your data anywhere.</p></div>
+    <p class="small muted" style="margin-top: var(--s4)">The sample is 60 fictional customers. Phone numbers use the 555-01xx range, which is set aside for fiction, and emails use example domains.</p>
+    <p style="margin: 0"><button class="linkish" id="dl-sample" type="button">Download the sample file</button> <span class="small muted">to see the layout or edit it</span></p>
+    <details>
+      <summary>What it checks</summary>
+      <p>It fixes spacing, and capitalization in names and cities written all in capitals or all in lower case. It puts phone numbers in the form 519-555-0142, postal codes in the form A1A 1A1, dates in the form 2025-03-04 (English or French month names), and provinces in whichever style the column mostly uses. It flags empty required cells, invalid email addresses and phone numbers, postal codes that can't be Canadian, and dates that could be read two ways or don't exist. Possible duplicates are listed for a person to confirm, never merged on their own.</p>
+    </details>
     <details id="paste-box">
       <summary>Paste CSV text instead</summary>
       <label class="block" for="paste">CSV text, with a header row first</label>
@@ -304,6 +312,7 @@ const Cleanup = (() => {
     missing: "Missing required value",
     phone_invalid: "Not a valid 10-digit phone number",
     postal_invalid: "Not a valid Canadian postal code",
+    email_invalid: "Not a valid email address",
     date_ambiguous: "Could be day/month or month/day",
     date_impossible: "This date doesn't exist",
     date_unrecognized: "Date format not recognized",
@@ -372,15 +381,16 @@ const Cleanup = (() => {
 
   function detectType(header) {
     const h = header.toLowerCase();
-    if (/e-?mail/.test(h)) return "email";
+    if (/accepts|marketing|consent|opt[ -]?in|subscri/.test(h)) return "text";
+    if (/e-?mail|courriel/.test(h)) return "email";
     if (/phone|tel\b|telephone|mobile|cell/.test(h)) return "phone";
     if (/postal|post ?code|zip/.test(h)) return "postal";
-    if (/date|since|joined|created|sign ?-?up|birth|dob/.test(h)) return "date";
-    if (/company|business|organi[sz]ation/.test(h)) return "text";
-    if (/name/.test(h)) return "name";
-    if (/address|street/.test(h)) return "address";
-    if (/city|town|municipality/.test(h)) return "city";
+    if (/date|since|depuis|joined|created|sign ?-?up|birth|dob|inscri/.test(h)) return "date";
+    if (/company|business|organi[sz]ation|country/.test(h)) return "text";
+    if (/city|town|municipality|ville/.test(h)) return "city";
     if (/prov|state|region/.test(h)) return "province";
+    if (/name|\bnom\b/.test(h)) return "name";
+    if (/address|street|adresse/.test(h)) return "address";
     return "text";
   }
 
@@ -437,7 +447,44 @@ const Cleanup = (() => {
       if (rc !== v) { v = rc; cased = true; }
     }
     const rule = spaced && cased ? "Spacing and capitalization" : spaced ? "Spacing" : cased ? "Capitalization" : "";
+    if (type === "email" && v && !/^[^\s@]+@[^\s@]+\.[^\s@.]{2,}$/.test(v)) return { value: v, rule, problem: "email_invalid" };
     return { value: v, rule };
+  }
+
+  // Provinces and territories. A column is written in whichever style most of its values already use.
+  const PROVINCES = [
+    ["AB", "Alberta", ["alta"]], ["BC", "British Columbia", ["colombie-britannique", "b.c."]], ["MB", "Manitoba", ["man"]],
+    ["NB", "New Brunswick", ["nouveau-brunswick", "n.b."]], ["NL", "Newfoundland and Labrador", ["terre-neuve-et-labrador", "nfld", "newfoundland", "nf"]],
+    ["NS", "Nova Scotia", ["nouvelle-ecosse", "n.s."]], ["NT", "Northwest Territories", ["territoires du nord-ouest", "nwt"]],
+    ["NU", "Nunavut", []], ["ON", "Ontario", ["ont"]], ["PE", "Prince Edward Island", ["ile-du-prince-edouard", "pei", "p.e.i."]],
+    ["QC", "Quebec", ["que", "pq"]], ["SK", "Saskatchewan", ["sask"]], ["YT", "Yukon", ["yk"]]
+  ];
+  const provKey = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.$/, "").trim();
+  function provinceOf(v) {
+    const k = provKey(v);
+    if (!k) return null;
+    for (const [code, name, alts] of PROVINCES) {
+      if (k === code.toLowerCase()) return { code, name, isCode: true };
+      if (k === provKey(name) || alts.includes(k) || alts.includes(k + ".")) return { code, name, isCode: false };
+    }
+    return null;
+  }
+  function provinceStyle(values) {
+    let codes = 0, names = 0;
+    for (const raw of values) {
+      const v = collapse(raw), p = provinceOf(v);
+      if (!p) continue;
+      if (p.isCode && v === p.code) codes++; else if (!p.isCode && v === p.name) names++;
+    }
+    return names > codes ? "name" : "code";
+  }
+  function cleanProvince(raw, style) {
+    const v = collapse(raw), spaced = v !== raw;
+    const p = provinceOf(v);
+    if (!p) return { value: v, rule: spaced ? "Spacing" : "" };
+    const out = style === "name" ? p.name : p.code;
+    if (out === v) return { value: v, rule: spaced ? "Spacing" : "" };
+    return { value: out, rule: style === "name" ? "Province name" : "Province code" };
   }
 
   function cleanPhone(raw) {
@@ -465,7 +512,10 @@ const Cleanup = (() => {
   }
 
   const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, sept: 9, oct: 10, nov: 11, dec: 12 };
+  const MOIS = { janvier: 1, janv: 1, fevrier: 2, fevr: 2, fev: 2, mars: 3, avril: 4, avr: 4, mai: 5, juin: 6, juillet: 7, juil: 7, aout: 8, septembre: 9, octobre: 10, novembre: 11, decembre: 12, dec: 12 };
   function monthNum(word) {
+    const f = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\.$/, "");
+    if (MOIS[f] && !/^(dec)$/.test(f)) return MOIS[f];
     const w = word.toLowerCase().replace(/\.$/, "");
     if (MONTHS[w]) return MONTHS[w];
     const k = w.slice(0, 3);
@@ -495,7 +545,7 @@ const Cleanup = (() => {
       else return { value: v, problem: "date_ambiguous", rule: v !== raw ? "Spacing" : "" };
     }
     else if ((r = v.match(/^([A-Za-z]+\.?)\s+(\d{1,2}),?\s+(\d{4})$/))) { m = monthNum(r[1]); d = +r[2]; y = +r[3]; if (!m) return { value: v, problem: "date_unrecognized", rule: "" }; }
-    else if ((r = v.match(/^(\d{1,2})[\s-]+([A-Za-z]+\.?),?[\s-]+(\d{4})$/))) { d = +r[1]; m = monthNum(r[2]); y = +r[3]; if (!m) return { value: v, problem: "date_unrecognized", rule: "" }; }
+    else if ((r = v.replace(/^le\s+/i, "").replace(/^(\d{1,2})er\b/i, "$1").match(/^(\d{1,2})[\s-]+([A-Za-z\u00C0-\u00FF]+\.?),?[\s-]+(\d{4})$/))) { d = +r[1]; m = monthNum(r[2]); y = +r[3]; if (!m) return { value: v, problem: "date_unrecognized", rule: "" }; }
     else return { value: v, problem: "date_unrecognized", rule: v !== raw ? "Spacing" : "" };
     if (!realDate(y, m, d)) return { value: v, problem: "date_impossible", rule: v !== raw ? "Spacing" : "" };
     const out = y + "-" + pad(m) + "-" + pad(d);
@@ -592,6 +642,7 @@ const Cleanup = (() => {
     const types = mapping.map(m => m.type);
     const changes = [], issues = [];
     const keys = [];
+    const provStyle = types.map((t, c) => t === "province" ? provinceStyle(table.rows.map(r => r.cells[c])) : null);
     const rows = table.rows.map(r => {
       const k = {};
       const cells = r.cells.map((raw, c) => {
@@ -601,12 +652,14 @@ const Cleanup = (() => {
         if (t === "phone") res = cleanPhone(raw);
         else if (t === "postal") res = cleanPostal(raw);
         else if (t === "date") res = cleanDate(raw, mode);
+        else if (t === "province") res = cleanProvince(raw, provStyle[c]);
         else res = cleanText(raw, t);
         if (res.rule) changes.push({ row: r.row, col: table.headers[c], before: raw, after: res.value, rule: res.rule });
         if (res.problem) issues.push({ row: r.row, col: table.headers[c], value: raw, code: res.problem, problem: PROBLEMS[res.problem] });
         if (res.digits && !k.phone) k.phone = res.digits;
         if (res.key && !k.postal) k.postal = res.key;
-        if (mapping[c].required && res.value === "") issues.push({ row: r.row, col: table.headers[c], value: "", code: "missing", problem: PROBLEMS.missing });
+        // a required cell only counts as missing when every column of the same kind is empty in this row
+        if (mapping[c].required && res.value === "" && !r.cells.some((v, j) => j !== c && types[j] === t && v.trim() !== "")) issues.push({ row: r.row, col: table.headers[c], value: "", code: "missing", problem: PROBLEMS.missing });
         return res.value;
       });
       keys.push(k);
@@ -696,9 +749,12 @@ const SAMPLE_CSV = __SAMPLE__;
     state.decisions = {};
     $("stale").hidden = true;
     $("btn-clean").textContent = "Clean the data";
+    const seenReq = new Set();
     state.mapping = table.headers.map(h => {
       const type = Cleanup.detectType(h);
-      return { type, required: type === "name" || type === "email" || type === "phone" };
+      const required = (type === "name" || type === "email" || type === "phone") && !seenReq.has(type);
+      if (required) seenReq.add(type);
+      return { type, required };
     });
     const delimName = { ",": "commas", ";": "semicolons", "\t": "tabs" }[table.delimiter];
     $("load-status").textContent = "Loaded " + table.rows.length + " rows and " + table.headers.length + " columns from " + label + ", separated by " + delimName + ".";
@@ -753,7 +809,8 @@ const SAMPLE_CSV = __SAMPLE__;
     $("btn-clean").textContent = "Clean the data";
     $("step-results").hidden = false;
     renderResults();
-    $("h-results").focus();
+    $("h-results").focus({ preventScroll: true });
+    $("step-results").scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }
 
   function countBy(list, key) { const m = {}; for (const x of list) m[x[key]] = (m[x[key]] || 0) + 1; return m; }
@@ -770,7 +827,7 @@ const SAMPLE_CSV = __SAMPLE__;
     ];
     $("summary").innerHTML = parts.join(" ");
     renderMap(flagged);
-    const cats = { "Spacing": "Spacing and capitalization", "Capitalization": "Spacing and capitalization", "Spacing and capitalization": "Spacing and capitalization", "Phone format": "Phone numbers", "Postal code format": "Postal codes" };
+    const cats = { "Spacing": "Spacing and capitalization", "Capitalization": "Spacing and capitalization", "Spacing and capitalization": "Spacing and capitalization", "Phone format": "Phone numbers", "Postal code format": "Postal codes", "Province code": "Provinces", "Province name": "Provinces" };
     const byCat = {};
     for (const c of r.changes) { const k = cats[c.rule] || (c.rule.startsWith("Date") ? "Dates" : c.rule); byCat[k] = (byCat[k] || 0) + 1; }
     renderBars($("bars-changes"), byCat, "No cells needed changing.");
@@ -947,7 +1004,9 @@ const SAMPLE_CSV = __SAMPLE__;
     download(state.name + "-issues.csv", Cleanup.toCSV(["Row", "Column", "Value", "Problem"], all.map(i => [i.row, i.col, i.value, i.problem])));
   });
 
-  $("btn-sample").addEventListener("click", () => { state.name = "sample-customers"; load(SAMPLE_CSV, "the sample data"); });
+  // The sample goes straight to results in one tap. The column check stays visible above them.
+  $("btn-sample").addEventListener("click", () => { state.name = "sample-customers"; if (load(SAMPLE_CSV, "the sample data")) run(); });
+  $("dl-sample").addEventListener("click", () => download("sample-customers.csv", SAMPLE_CSV));
   $("btn-file").addEventListener("click", () => $("file").click());
   $("file").addEventListener("change", () => {
     const f = $("file").files[0];

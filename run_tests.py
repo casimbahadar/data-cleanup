@@ -7,7 +7,7 @@ EXP = json.load(open(os.path.join(ROOT, "expected.json"), encoding="utf-8"))
 COLS = EXP["columns"]
 TYPE_OF = {"Name":"text","Email":"text","Street address":"text","City":"text","Province":"text","Phone":"phone","Postal code":"postal","Customer since":"date"}
 CODE_OF = {"Missing required value":"missing","Not a valid 10-digit phone number":"phone_invalid","Not a valid Canadian postal code":"postal_invalid",
-           "Could be day/month or month/day":"date_ambiguous","This date doesn't exist":"date_impossible"}
+           "Could be day/month or month/day":"date_ambiguous","This date doesn't exist":"date_impossible", "Not a valid email address":"email_invalid"}
 results = []
 def check(name, cond, detail=""):
     results.append((name, bool(cond), detail))
@@ -48,13 +48,17 @@ with sync_playwright() as pw:
     check("every cleaned cell equals the planned value (480 cells)", not mism, mism[:8])
 
     log, _ = grab(page, "#dl-log")
-    got_changes = sorted([[int(r[0]), r[1], TYPE_OF[r[1]]] for r in log[1:]])
+    def cat(rule):
+        if rule.startswith("Province"): return "province"
+        if rule.startswith("Date"): return "date"
+        return {"Phone format": "phone", "Postal code format": "postal"}.get(rule, "text")
+    got_changes = sorted([[int(r[0]), r[1], cat(r[4])] for r in log[1:]])
     exp_changes = sorted(EXP["changes"])
-    check("change log = exactly the 37 planted changes", got_changes == exp_changes,
+    check("change log = exactly the 42 planted changes", got_changes == exp_changes,
           {"missing": [c for c in exp_changes if c not in got_changes], "extra": [c for c in got_changes if c not in exp_changes]})
     by = {}
     for c in got_changes: by[c[2]] = by.get(c[2], 0) + 1
-    check("change counts 14 text / 9 phone / 6 postal / 8 date", by == EXP["counts"]["changes"], by)
+    check("change counts 14 text / 9 phone / 6 postal / 10 date / 3 province", by == EXP["counts"]["changes"], by)
     before_after_ok = all(r[2] != r[3] for r in log[1:])
     check("every log entry has differing before and after", before_after_ok)
 
@@ -62,7 +66,7 @@ with sync_playwright() as pw:
     cell_issues = [r for r in iss[1:] if not r[3].startswith("Possible duplicate")]
     got_flags = sorted([[int(r[0]), r[1], CODE_OF.get(r[3], "?" + r[3])] for r in cell_issues])
     exp_flags = sorted(EXP["flags"])
-    check("issues = exactly the 15 planted problems", got_flags == exp_flags,
+    check("issues = exactly the 17 planted problems", got_flags == exp_flags,
           {"missing": [c for c in exp_flags if c not in got_flags], "extra": [c for c in got_flags if c not in exp_flags]})
     dup_issue_rows = sorted(int(r[0]) for r in iss[1:] if r[3].startswith("Possible duplicate"))
     check("undecided duplicates listed in issues CSV (7)", len(dup_issue_rows) == 7, dup_issue_rows)
@@ -76,7 +80,7 @@ with sync_playwright() as pw:
     check("trap: Smiths on same street not flagged", set(tr["smith"]) not in flat)
     check("trap: O'Brien and DeSouza not changed", not any(c[0] in (tr["obrien"], tr["desouza"]) for c in got_changes))
     summary = page.inner_text("#summary")
-    check("summary numbers come from the data", "60 rows" in summary and "37 cells" in summary and "15 problems" in summary and "7 possible" in summary, summary)
+    check("summary numbers come from the data", "60 rows" in summary and "42 cells" in summary and "17 problems" in summary and "7 possible" in summary, summary)
     reasons = page.eval_on_selector_all(".pair .reason", "els => els.map(e => e.textContent)")
     check("every pair shows a reason", all(len(r) > 5 for r in reasons), reasons)
     page.screenshot(path=os.path.join(ROOT, "shots", "d1-390-results.png"), full_page=True)
@@ -109,7 +113,7 @@ with sync_playwright() as pw:
         i2, _ = grab(page, "#dl-issues")
         amb = [r for r in i2[1:] if r[3] == "Could be day/month or month/day"]
         l2, _ = grab(page, "#dl-log")
-        check(f"{mode}-first setting resolves the 3 ambiguous dates and logs 40 changes", ok and not amb and len(l2) - 1 == 40, (ok, len(amb), len(l2) - 1))
+        check(f"{mode}-first setting resolves the 3 ambiguous dates and logs 45 changes", ok and not amb and len(l2) - 1 == 45, (ok, len(amb), len(l2) - 1))
     page.check('input[name="datemode"][value="unsure"]')
 
 
@@ -138,6 +142,55 @@ with sync_playwright() as pw:
     check("page cannot send data out (fetch blocked by CSP)", blocked == "blocked", blocked)
     net.close()
 
+
+    # ---- files shaped like real exports (fixtures in /home/claude/fixtures)
+    FX = "/home/claude/fixtures/"
+    def load_file(name):
+        if page.is_visible("#btn-reset"): page.click("#btn-reset")
+        page.set_input_files("#file", FX + name)
+        page.wait_for_selector(f"#load-status:has-text('{name}')")
+        types = page.eval_on_selector_all("#map-body tr", "rs => rs.map(r => [r.querySelector('th').textContent, r.querySelector('select').value, r.querySelector('input').checked])")
+        page.click("#btn-clean"); page.wait_for_selector("#step-results:not([hidden])")
+        clean = rcsv_path(grab_path(page, "#dl-clean")); iss = rcsv_path(grab_path(page, "#dl-issues"))
+        return {t[0]: (t[1], t[2]) for t in types}, clean, iss
+    def grab_path(p, sel):
+        with p.expect_download() as d: p.click(sel)
+        return d.value.path()
+    def rcsv_path(pth):
+        t = open(pth, encoding="utf-8").read(); t = t[1:] if t.startswith("\ufeff") else t
+        return list(csv.reader(io.StringIO(t)))
+    m, clean, iss = load_file("customers-shopify-style.csv")
+    exp_types = {"First Name": "name", "Last Name": "name", "Email": "email", "Accepts Email Marketing": "text", "Default Address Company": "text",
+                 "Default Address Address1": "address", "Default Address City": "city", "Default Address Province Code": "province",
+                 "Default Address Zip": "postal", "Default Address Phone": "phone", "Phone": "phone", "Accepts SMS Marketing": "text"}
+    check("Shopify-style headers: every column gets the right type", all(m.get(k, ("?",))[0] == v for k, v in exp_types.items()), {k: m.get(k, ("?",))[0] for k, v in exp_types.items() if m.get(k, ("?",))[0] != v})
+    check("Shopify-style: only the first name, email and phone columns are required", [k for k in m if m[k][1]] == ["First Name", "Email", "Default Address Phone"], [k for k in m if m[k][1]])
+    h = clean[0]; col = lambda r, n: clean[r][h.index(n)]
+    check("Shopify-style: OMAR HADDAD, KITCHENER, 'on', 519.555.0101 cleaned", col(2, "First Name") == "Omar" and col(2, "Default Address City") == "Kitchener" and col(2, "Default Address Province Code") == "ON" and col(2, "Default Address Phone") == "519-555-0101" and col(2, "Email") == "omar.haddad@example.org", clean[2])
+    check("Shopify-style: 'Ontario' in a code column becomes ON; yes/no columns untouched", col(5, "Default Address Province Code") == "ON" and col(2, "Accepts Email Marketing") == "no")
+    probs = {(r[0], r[1], r[3]) for r in iss[1:]}
+    check("Shopify-style: phone in the second phone column is not 'missing'", not any(p[0] == "4" and p[2] == "Missing required value" for p in probs), probs)
+    check("Shopify-style: bad email and bad postal code flagged", ("5", "Email", "Not a valid email address") in probs and ("6", "Default Address Zip", "Not a valid Canadian postal code") in probs, probs)
+    check("Shopify-style: two rows with the same email listed as a possible duplicate", any("Possible duplicate of row 6" in r[3] and r[0] == "7" for r in iss[1:]), [r for r in iss if "duplicate" in r[3]])
+    m, clean, iss = load_file("customers-older-shopify-style.csv")
+    h = clean[0]
+    check("older Shopify-style: Province column of names stays names ('NS' becomes 'Nova Scotia'), code column stays codes",
+          [r[h.index("Province")] for r in clean[1:]] == ["Quebec", "Ontario", "Nova Scotia"] and [r[h.index("Province Code")] for r in clean[1:]] == ["QC", "ON", "NS"], [r[h.index("Province")] for r in clean[1:]])
+    m, clean, iss = load_file("customers-windows-excel.csv")
+    h = clean[0]
+    exp3 = {"Nom": "name", "Courriel": "email", "Téléphone": "phone", "Adresse": "address", "Ville": "city", "Province": "province", "Code postal": "postal", "Client depuis": "date"}
+    check("French headers from a Windows Excel file (semicolons, Windows-1252) get the right types", all(m.get(k, ("?",))[0] == v for k, v in exp3.items()), m)
+    check("French: FRANÇOIS CÔTÉ recased, Québec and qc become QC", clean[2][0] == "François Côté" and [r[5] for r in clean[1:]] == ["QC", "QC", "QC"], clean[1:])
+    check("French month names: '4 mars 2025', '1er février 2024', 'le 15 août 2023'", [r[7] for r in clean[1:]] == ["2025-03-04", "2024-02-01", "2023-08-15"], [r[7] for r in clean[1:]])
+    if page.is_visible("#btn-reset"): page.click("#btn-reset")
+
+    # ---- first screen: the main button is visible without scrolling on a small phone
+    page.set_viewport_size({"width": 375, "height": 667}); page.goto(URL); page.wait_for_selector("#btn-sample")
+    bottom = page.evaluate("document.getElementById('btn-sample').getBoundingClientRect().bottom")
+    check("Load sample data is on the first screen at 375 x 667", bottom <= 667, bottom)
+    sample_dl = rcsv_path(grab_path(page, "#dl-sample"))
+    check("Download the sample file gives the 60-row sample", len(sample_dl) == 61 and sample_dl[0][0] == "Name")
+    page.set_viewport_size({"width": 390, "height": 844})
     # ---- keyboard focus visible
     page.focus("#btn-sample"); page.keyboard.press("Tab"); page.keyboard.press("Shift+Tab")
     outline = page.evaluate("getComputedStyle(document.activeElement).outlineStyle + ' ' + getComputedStyle(document.activeElement).outlineWidth")

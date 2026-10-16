@@ -2,7 +2,7 @@ Name,Email,Phone,Street address,City,Province,Postal code,Customer since
 MARIE-CLAIRE O'NEILL,marie-claire.oneill@example.org,519-555-0113,101 Bridgeport Rd E,Elmira,ON,N2S 1P3,2023-02-27
 Hana Sato,hana.sato@example.org,519-555-0143,311 Queen St S,Kitchener,ON,12345,2025-08-06
 Bob Chen,robert.chen@example.com,519-555-0170,31 Weber St N,Kitchener,ON,N2E 1B3,2025-09-12
-Sofia Rossi,sofia.rossi@example.com,,199 Bridgeport Rd E,Kitchener,ON,N2K 2M7,2025-04-01
+Sofia Rossi,sofia.rossi@example.com,,199 Bridgeport Rd E,Kitchener,Ontario,N2K 2M7,2025-04-01
 Wei Zhang,wei.zhang@example.org,519-555-0122,164 Belmont Ave W,Cambridge ,ON,N2C 2T2,2024-11-18
 Samuel  Adeyemi,samuel.adeyemi@example.com,519-555-0115,115 Queen St S,New Hamburg,ON,N2V 1H5,2025-04-04
 Leila Nasser,leila.nasser@example.net,,297 Bridgeport Rd E,Waterloo,ON,D2L 3G1,2023-06-02
@@ -25,13 +25,13 @@ Priya Raman,priya.raman@example.org,519-555-0107,59 Frederick St,New Hamburg,ON,
 Ravi Kapoor,ravi.kapoor@example.net,519-555-0138,276 Fischer-Hallman Rd,Kitchener,ON, N2Y 2J8,2025-02-30
 Ines Carvalho,ines.carvalho@example.com,519-555-0121,157 Frederick St,KITCHENER,ON,N2B 2K1,2023-10-16
 Omar Haddad,omar.haddad@example.org,519-555-0101,17 Queen St S,Waterloo,ON,N2B 1K1,2023-02-03
-Aisha Bello,aisha.bello@example.com,519-555-01322,241 Columbia St W,Waterloo,ON,N2S 2P3,2023-10-13
+Aisha Bello,aisha.bello@example.com,519-555-01322,241 Columbia St W,Waterloo,ON,N2S 2P3,15 janvier 2024
   Hannah Weber ,hannah.weber@example.org,519-555-0116,122 Erb St W,,ON,N2W 1R6,2022-05-06
 Maya Patel,maya.patel@example.com,519-555-0100,10 King St W,Kitchener,ON,N2A 1A0,2022-01-01
 Nadia Petrova,nadia.petrova@example.org,519-555-0131 x12,227 Weber St N,New Hamburg,ON,N2P 2X1,2025-08-09
 Owen Clarke,,519-555-0134,248 Victoria St S,Cambridge,ON,n2t2y4,2024-11-15
 ,victor.lindqvist@example.com,519-555-0142,304 King St W,Cambridge,ON,N2O 4B7,2024-07-04
-Isaac Mensah,isaac.mensah@example.com,519-555-0136,262 Belmont Ave W,Waterloo,ON,N2W-2R6,07/11/2024
+Isaac Mensah,isaac.mensah@example.com,519-555-0136,262 Belmont Ave W,Waterloo,ont.,N2W-2R6,07/11/2024
 Rachel Bauer,rachel.bauer@example.net,519-555-0123,12  Queen St S,New Hamburg,ON,N2E 2B3,2025-12-20
 Noah Martin,noah.martin@example.net,519-555-0120,150 Victoria St S,waterloo,ON,N2A 2A0,2022-09-14
 Diego Morales,diego.morales@example.org,226-555-0146,332 University Ave E,Kitchener,ON,N2J 3C6,15/03/2024
@@ -50,12 +50,12 @@ Fiona Walsh,fiona.walsh@example.net,(226)555-0147,339 Columbia St W,New Hamburg,
 Farah Siddiqui,farah.s@example.org,226-555-0173,52 Victoria Street South,Kitchener,ON,N2J 1C6,2025-11-30
 Siobhan O'Brien,siobhan.obrien@example.net,519-555-0111 ext. 5,87 Ottawa St S,Kitchener,ON,N2P 1X1,2025-12-23
 Lucas DeSouza,lucas.desouza@example.com,519-555-0112,94 Highland Rd W,Waterloo,ON,N2Z 1W4,2022-01-25
-Zoe Laurent,zoe.laurent@example.org,519-555-0137,269 Lancaster St E,Elmira,ON,n2x2z7,02/01/2026
+Zoe Laurent,zoe.laurent@example.org,519-555-0137,269 Lancaster St E,Elmira,on,n2x2z7,02/01/2026
 Omar Haddad,omar.haddad@example.org,519-555-0101,17 Queen St S,Waterloo,ON,N2B 1K1,2023-02-03
-Ben Hofstetter,ben.hofstetter@example.net,555-0131,234 University Ave E,Kitchener,ON,N2R 2G2,2022-09-11
+Ben Hofstetter,ben.hofstetter@example.net,555-0131,234 University Ave E,Kitchener,ON,N2R 2G2,4 mars 2025
 Daniel Moreau,daniel.moreau@example.org,226-555-0152,374 Fischer-Hallman Rd,Waterloo,ON,N2R 3G2,2023-7-4
 Anna Kowalsky,annak@example.net,519-555-0172,45 Columbia St W,Elmira,ON,N2H 1V5,2026-01-20
-Chloe Dubois,chloe.dubois@example.net,1-519-555-0129,213 Queen St S,Elmira,ON,N2M 2E9,2023-06-05
+Chloe Dubois,chloe.dubois@@example.org,1-519-555-0129,213 Queen St S,Elmira,ON,N2M 2E9,2023-06-05
 Sara Lindberg,sara.lindberg@example.org,226-555-0149,353 Frederick St,Waterloo,ON,N2M 3E9,4 Mar 2025
 Mei Tanaka,mei.tanaka@example.net,519-555-0135,255 Frederick St,Kitchener,ON,n2v 2h5,03/04/2025
-Mateo Alvarez,mateo.alvarez@example.org,+1 519 555 0128,206 King St W,Waterloo,ON,N2L 2W8,2022-05-03
+Mateo Alvarez,mateo.alvarez@example,+1 519 555 0128,206 King St W,Waterloo,ON,N2L 2W8,2022-05-03

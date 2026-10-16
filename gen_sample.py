@@ -113,6 +113,14 @@ AMB={"Mei Tanaka":("03/04/2025","2025-04-03","2025-03-04"),
 for n,(r,dfirst,mfirst) in AMB.items(): flag(n,"Customer since",r,"date_ambiguous")
 flag("Ravi Kapoor","Customer since","2025-02-30","date_impossible")
 
+# new rules: invalid emails, province variants, French month names
+flag("Chloe Dubois","Email","chloe.dubois@@example.org","email_invalid")
+flag("Mateo Alvarez","Email","mateo.alvarez@example","email_invalid")
+mut("Sofia Rossi","Province","Ontario","province")
+mut("Isaac Mensah","Province","ont.","province")
+mut("Zoe Laurent","Province","on","province")
+dt("Ben Hofstetter","4 mars 2025","2025-03-04")
+dt("Aisha Bello","15 janvier 2024","2024-01-15")
 # missing required (name, email, phone)
 flag("Victor Lindqvist","Name","","missing")   # also has invalid postal: two flags, one row
 flag("Julia Novak","Email","","missing")
